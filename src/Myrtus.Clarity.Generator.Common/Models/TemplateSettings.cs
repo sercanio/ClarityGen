@@ -1,11 +1,5 @@
-﻿namespace Myrtus.Clarity.Generator
+﻿namespace Myrtus.Clarity.Generator.Common.Models
 {
-
-    public class AppSettings
-    {
-        public TemplateSettings Template { get; set; }
-    }
-
     public class TemplateSettings
     {
         public string GitRepoUrl { get; set; }

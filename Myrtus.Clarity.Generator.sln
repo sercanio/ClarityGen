@@ -3,7 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClarityGen", "src\ClarityGen\ClarityGen.csproj", "{40D06883-E3B6-48D5-9EF6-FAA8674081AB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Myrtus.Clarity.Generator.DataAccess", "src\Myrtus.Clarity.Generator.DataAccess\Myrtus.Clarity.Generator.DataAccess.csproj", "{9DC244F5-ACB3-45AA-8F0E-D6ED482E78B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Myrtus.Clarity.Generator.Business", "src\Myrtus.Clarity.Generator.Business\Myrtus.Clarity.Generator.Business.csproj", "{0F33380B-0EB2-4335-B00F-A1E3F81EF8D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Myrtus.Clarity.Generator.Common", "src\Myrtus.Clarity.Generator.Common\Myrtus.Clarity.Generator.Common.csproj", "{CB0598EA-9131-4E77-82CA-24FD5FB99619}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Myrtus.Clarity.Generator.Presentation", "src\Myrtus.Clarity.Generator.Presentation\Myrtus.Clarity.Generator.Presentation.csproj", "{AACD774F-01FA-4656-AB59-DF034CC893B3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +17,22 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{40D06883-E3B6-48D5-9EF6-FAA8674081AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{40D06883-E3B6-48D5-9EF6-FAA8674081AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{40D06883-E3B6-48D5-9EF6-FAA8674081AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{40D06883-E3B6-48D5-9EF6-FAA8674081AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DC244F5-ACB3-45AA-8F0E-D6ED482E78B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DC244F5-ACB3-45AA-8F0E-D6ED482E78B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DC244F5-ACB3-45AA-8F0E-D6ED482E78B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DC244F5-ACB3-45AA-8F0E-D6ED482E78B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F33380B-0EB2-4335-B00F-A1E3F81EF8D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F33380B-0EB2-4335-B00F-A1E3F81EF8D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F33380B-0EB2-4335-B00F-A1E3F81EF8D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F33380B-0EB2-4335-B00F-A1E3F81EF8D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CB0598EA-9131-4E77-82CA-24FD5FB99619}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CB0598EA-9131-4E77-82CA-24FD5FB99619}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CB0598EA-9131-4E77-82CA-24FD5FB99619}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CB0598EA-9131-4E77-82CA-24FD5FB99619}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AACD774F-01FA-4656-AB59-DF034CC893B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AACD774F-01FA-4656-AB59-DF034CC893B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AACD774F-01FA-4656-AB59-DF034CC893B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AACD774F-01FA-4656-AB59-DF034CC893B3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
