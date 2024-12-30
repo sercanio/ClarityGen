@@ -71,16 +71,21 @@ The generator’s settings are stored in the `appsettings.json` file. Below is a
 ### **Command-Line Execution**
 Run the application by providing the project name and output directory as command-line arguments.
 
+### Syntax:
+````bash
+ClarityGen.exe <ProjectName> <OutputDirectory> [--add-module <ModuleName>]...
+````
+
 #### Example:
 ```bash
-dotnet run --project src/Myrtus.Clarity.Generator.Presentation MyNewProject ./output
+ClarityGen.exe MyNewProject C:\Users\serca\source\repos\sercanio\tmp --add-module cms
 ```
 
 ### **Interactive Mode**
 If no arguments are provided, the program will prompt for the project name and output directory:
 
 ```bash
-dotnet run --project src/Myrtus.Clarity.Generator.Presentation
+ClarityGen.exe
 ```
 
 ---
