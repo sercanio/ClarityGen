@@ -11,6 +11,7 @@ namespace Myrtus.Clarity.Generator.Common
         private readonly StatusContext _status;
         private readonly string _tempDir;
 
+        // Mapping of module names to their Git repository URLs
         private readonly Dictionary<string, string> _availableModules = new Dictionary<string, string>
         {
             { "cms", "https://github.com/sercanio/Myrtus.Clarity.Module.CMS.git" }
@@ -62,14 +63,17 @@ namespace Myrtus.Clarity.Generator.Common
         {
             _status.Status = $"[bold yellow]Adding module '{moduleName}' as a submodule...[/]";
 
+            // Define the relative path where the module will be added
+            string modulePath = Path.Combine("modules", moduleName); // Relative path
+
+            // Ensure the 'modules' directory exists
             string modulesDirectory = Path.Combine(_tempDir, "modules");
             if (!Directory.Exists(modulesDirectory))
             {
                 Directory.CreateDirectory(modulesDirectory);
             }
 
-            string modulePath = Path.Combine(modulesDirectory, moduleName);
-
+            // Run 'git submodule add <repoUrl> <modulePath>' within the cloned template repository
             var gitCommand = $"submodule add {repoUrl} \"{modulePath}\"";
             var result = await RunProcessAsync("git", gitCommand, _tempDir);
 
@@ -83,19 +87,23 @@ namespace Myrtus.Clarity.Generator.Common
                 AnsiConsole.MarkupLine($"[green]Success:[/] Module '{moduleName}' added successfully.");
             }
 
+            // Prevent initialization of nested submodules (like 'core/') within the CMS module
+            // by removing the .gitmodules entry for the nested submodule
             string cmsGitModulesPath = Path.Combine(_tempDir, ".gitmodules");
             if (File.Exists(cmsGitModulesPath))
             {
                 var lines = File.ReadAllLines(cmsGitModulesPath).ToList();
-                lines.RemoveAll(line => line.Contains($"path = {moduleName}/core", StringComparison.OrdinalIgnoreCase));
+                // Assuming that the nested submodule is named 'core'
+                lines.RemoveAll(line => line.Contains($"path = {modulePath}/core", StringComparison.OrdinalIgnoreCase));
 
                 await File.WriteAllLinesAsync(cmsGitModulesPath, lines);
             }
 
-            var updateResult = await RunProcessAsync("git", $"submodule update --init --recursive --depth 1 \"{modulePath}\"", _tempDir);
-            if (!updateResult.Success)
+            // Optionally, remove the nested submodule's directory if it exists
+            string nestedSubmodulePath = Path.Combine(_tempDir, modulePath, "core");
+            if (Directory.Exists(nestedSubmodulePath))
             {
-                AnsiConsole.MarkupLine($"[yellow]Warning:[/] Failed to update nested submodules for '{moduleName}': {updateResult.Error}");
+                Directory.Delete(nestedSubmodulePath, true);
             }
         }
 

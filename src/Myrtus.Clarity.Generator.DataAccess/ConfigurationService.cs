@@ -18,7 +18,8 @@ public class ConfigurationService
 
         try
         {
-            var config = JsonSerializer.Deserialize<AppSettings>(await File.ReadAllTextAsync(configPath));
+            var configContent = await File.ReadAllTextAsync(configPath);
+            var config = JsonSerializer.Deserialize<AppSettings>(configContent);
 
             if (string.IsNullOrEmpty(config?.Template?.GitRepoUrl))
             {
@@ -30,7 +31,8 @@ public class ConfigurationService
         }
         catch (Exception ex)
         {
-            AnsiConsole.MarkupLine($"[red]Configuration Error:[/] {ex.Message}");
+            var safeMessage = Markup.Escape(ex.Message);
+            AnsiConsole.MarkupLine($"[red]Configuration Error:[/] {safeMessage}");
             return null;
         }
     }
