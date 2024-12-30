@@ -6,7 +6,7 @@ namespace Myrtus.Clarity.Generator.Business;
 
 public class GeneratorService
 {
-    public async Task RunGeneratorAsync(string projectName, string outputDir)
+    public async Task RunGeneratorAsync(string projectName, string outputDir, List<string> modulesToAdd)
     {
         await AnsiConsole.Status()
             .StartAsync("Initializing...", async ctx =>
@@ -16,7 +16,7 @@ public class GeneratorService
                 if (config is null) return;
 
                 var generator = new ProjectGenerator(config, ctx);
-                await generator.GenerateProjectAsync(projectName, outputDir);
+                await generator.GenerateProjectAsync(projectName, outputDir, modulesToAdd);
             });
     }
 }

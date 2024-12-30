@@ -9,21 +9,44 @@ public class Program
     {
         AnsiConsole.Write(new FigletText("ClarityGen").Color(Color.Cyan1));
 
-        if (args.Length == 0)
+        string projectName = string.Empty;
+        string outputDirectory = string.Empty;
+        List<string> modulesToAdd = new List<string>();
+
+        for (int i = 0; i < args.Length; i++)
         {
-            var projectName = AnsiConsole.Ask<string>("[yellow]Enter project name:[/]");
-            var outputDirectory = AnsiConsole.Ask<string>("[yellow]Enter output directory (or press Enter for current):[/]");
+            if (args[i].Equals("--add-module", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                modulesToAdd.Add(args[i + 1].ToLower());
+                i++; 
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(projectName))
+                {
+                    projectName = args[i];
+                }
+                else if (string.IsNullOrEmpty(outputDirectory))
+                {
+                    outputDirectory = args[i];
+                }
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(projectName))
+        {
+            projectName = AnsiConsole.Ask<string>("[yellow]Enter project name:[/]");
+        }
+
+        if (string.IsNullOrWhiteSpace(outputDirectory))
+        {
+            outputDirectory = AnsiConsole.Ask<string>("[yellow]Enter output directory (or press Enter for current):[/]");
 
             if (string.IsNullOrWhiteSpace(outputDirectory))
                 outputDirectory = AppDomain.CurrentDomain.BaseDirectory;
-
-            args = new[] { projectName, outputDirectory };
         }
 
-        string newProjectName = args[0];
-        string outputDir = args.Length > 1 ? args[1] : AppDomain.CurrentDomain.BaseDirectory;
-
         var generatorService = new GeneratorService();
-        await generatorService.RunGeneratorAsync(newProjectName, outputDir);
+        await generatorService.RunGeneratorAsync(projectName, outputDirectory, modulesToAdd);
     }
 }

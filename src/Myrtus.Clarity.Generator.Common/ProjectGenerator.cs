@@ -11,6 +11,12 @@ namespace Myrtus.Clarity.Generator.Common
         private readonly StatusContext _status;
         private readonly string _tempDir;
 
+        private readonly Dictionary<string, string> _availableModules = new Dictionary<string, string>
+        {
+            { "cms", "https://github.com/sercanio/Myrtus.Clarity.Module.CMS.git" }
+            // Add more modules here as needed
+        };
+
         public ProjectGenerator(AppSettings config, StatusContext status)
         {
             _config = config;
@@ -18,13 +24,29 @@ namespace Myrtus.Clarity.Generator.Common
             _tempDir = Path.Combine(Path.GetTempPath(), $"ClarityGen-{Guid.NewGuid()}");
         }
 
-        public async Task GenerateProjectAsync(string projectName, string outputDir)
+        public async Task GenerateProjectAsync(string projectName, string outputDir, List<string> modulesToAdd)
         {
             try
             {
                 await CloneTemplateRepositoryAsync();
                 await RenameProjectAsync(projectName);
                 await UpdateSubmodulesAsync();
+
+                if (modulesToAdd != null && modulesToAdd.Count > 0)
+                {
+                    foreach (var module in modulesToAdd)
+                    {
+                        if (_availableModules.ContainsKey(module))
+                        {
+                            await AddModuleAsync(module, _availableModules[module]);
+                        }
+                        else
+                        {
+                            AnsiConsole.MarkupLine($"[yellow]Warning:[/] Module '{module}' is not recognized and will be skipped.");
+                        }
+                    }
+                }
+
                 FinalizeProjectAsync(projectName, outputDir);
             }
             finally
@@ -33,6 +55,47 @@ namespace Myrtus.Clarity.Generator.Common
                 {
                     Directory.Delete(_tempDir, true);
                 }
+            }
+        }
+
+        private async Task AddModuleAsync(string moduleName, string repoUrl)
+        {
+            _status.Status = $"[bold yellow]Adding module '{moduleName}' as a submodule...[/]";
+
+            string modulesDirectory = Path.Combine(_tempDir, "modules");
+            if (!Directory.Exists(modulesDirectory))
+            {
+                Directory.CreateDirectory(modulesDirectory);
+            }
+
+            string modulePath = Path.Combine(modulesDirectory, moduleName);
+
+            var gitCommand = $"submodule add {repoUrl} \"{modulePath}\"";
+            var result = await RunProcessAsync("git", gitCommand, _tempDir);
+
+            if (!result.Success)
+            {
+                AnsiConsole.MarkupLine($"[red]Error:[/] Failed to add module '{moduleName}': {result.Error}");
+                return;
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[green]Success:[/] Module '{moduleName}' added successfully.");
+            }
+
+            string cmsGitModulesPath = Path.Combine(_tempDir, ".gitmodules");
+            if (File.Exists(cmsGitModulesPath))
+            {
+                var lines = File.ReadAllLines(cmsGitModulesPath).ToList();
+                lines.RemoveAll(line => line.Contains($"path = {moduleName}/core", StringComparison.OrdinalIgnoreCase));
+
+                await File.WriteAllLinesAsync(cmsGitModulesPath, lines);
+            }
+
+            var updateResult = await RunProcessAsync("git", $"submodule update --init --recursive --depth 1 \"{modulePath}\"", _tempDir);
+            if (!updateResult.Success)
+            {
+                AnsiConsole.MarkupLine($"[yellow]Warning:[/] Failed to update nested submodules for '{moduleName}': {updateResult.Error}");
             }
         }
 
@@ -179,7 +242,7 @@ namespace Myrtus.Clarity.Generator.Common
 
         private record ProcessResult(bool Success, string Output, string Error);
 
-        private async Task<ProcessResult> RunProcessAsync(string command, string arguments)
+        private async Task<ProcessResult> RunProcessAsync(string command, string arguments, string? workingDirectory = null)
         {
             using var process = new Process
             {
@@ -193,6 +256,11 @@ namespace Myrtus.Clarity.Generator.Common
                     CreateNoWindow = true
                 }
             };
+
+            if (!string.IsNullOrEmpty(workingDirectory))
+            {
+                process.StartInfo.WorkingDirectory = workingDirectory;
+            }
 
             var output = new List<string>();
             var error = new List<string>();
