@@ -1,6 +1,6 @@
 ﻿using Spectre.Console;
-using Myrtus.Clarity.Generator.DataAccess;
 using Myrtus.Clarity.Generator.Common;
+using Myrtus.Clarity.Generator.DataAccess;
 
 namespace Myrtus.Clarity.Generator.Business;
 
