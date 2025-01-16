@@ -1,46 +1,51 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AssemblyName>ClarityGen</AssemblyName>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AssemblyName>ClarityGen</AssemblyName>
 
-  <!-- Debug Configuration -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-  </PropertyGroup>
+		<!-- Tooling Properties -->
+		<PackAsTool>true</PackAsTool>
+		<ToolCommandName>claritygen</ToolCommandName>
+		<PackageId>Myrtus.Clarity.Generator</PackageId>
+		<Version>0.2.1</Version>
+		<Authors>Sercan Ateş</Authors>
+		<Description>A tool to generate projects with specified modules.</Description>
+		<PackageTags>project-generator;code-generation;cli</PackageTags>
+		<RepositoryUrl>https://github.com/sercanio/Myrtus.Clarity.Generator</RepositoryUrl>
+		<LicenseUrl>https://opensource.org/licenses/MIT</LicenseUrl>
+	</PropertyGroup>
 
-  <!-- Release Configuration -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-  </PropertyGroup>
+	<!-- Debug Configuration -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+		<DefineConstants>DEBUG;TRACE</DefineConstants>
+		<Optimize>false</Optimize>
+		<OutputPath>bin\Debug\</OutputPath>
+	</PropertyGroup>
 
-  <!-- Custom Configuration -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Custom'">
-    <DefineConstants>CUSTOM;TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Custom\</OutputPath>
-  </PropertyGroup>
+	<!-- Release Configuration -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<DefineConstants>TRACE</DefineConstants>
+		<Optimize>true</Optimize>
+		<OutputPath>bin\Release\</OutputPath>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Spectre.Console" Version="0.49.1" />
-  </ItemGroup>
+	<!-- Custom Configuration -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Custom'">
+		<DefineConstants>CUSTOM;TRACE</DefineConstants>
+		<Optimize>true</Optimize>
+		<OutputPath>bin\Custom\</OutputPath>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Myrtus.Clarity.Generator.Business\Myrtus.Clarity.Generator.Business.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Spectre.Console" Version="0.49.1" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Myrtus.Clarity.Generator.Business\Myrtus.Clarity.Generator.Business.csproj" />
+	</ItemGroup>
 
 </Project>

@@ -1,14 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<PackageReference Include="Spectre.Console" Version="0.49.1" />
 	</ItemGroup>
+
 	<ItemGroup>
-	  <ProjectReference Include="..\Myrtus.Clarity.Generator.Common\Myrtus.Clarity.Generator.Common.csproj" />
+		<ProjectReference Include="..\Myrtus.Clarity.Generator.Common\Myrtus.Clarity.Generator.Common.csproj" />
 	</ItemGroup>
+
+	<!-- Embed appsettings.json as a resource -->
+	<ItemGroup>
+		<EmbeddedResource Include="appsettings.json" />
+	</ItemGroup>
+
+	<!-- Ensure appsettings.json is not copied to the output directory -->
+	<ItemGroup>
+		<None Update="appsettings.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
 </Project>
