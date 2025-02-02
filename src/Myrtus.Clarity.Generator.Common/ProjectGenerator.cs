@@ -11,18 +11,19 @@ namespace Myrtus.Clarity.Generator.Common
         private readonly StatusContext _status;
         private readonly string _tempDir;
 
-        // Mapping of module names to their Git repository URLs
-        private readonly Dictionary<string, string> _availableModules = new Dictionary<string, string>
-        {
-            { "cms", "https://github.com/sercanio/Myrtus.Clarity.Module.CMS.git" }
-            // Add more modules here as needed
-        };
+        // Dictionary of module names to Git repository URLs, loaded from config
+        private readonly Dictionary<string, string> _availableModules;
 
         public ProjectGenerator(AppSettings config, StatusContext status)
         {
             _config = config;
             _status = status;
             _tempDir = Path.Combine(Path.GetTempPath(), $"ClarityGen-{Guid.NewGuid()}");
+
+            // Build our dictionary from the Modules section in appsettings.json
+            _availableModules = config.Modules?
+                .ToDictionary(m => m.Name, m => m.GitRepoUrl, StringComparer.OrdinalIgnoreCase)
+                ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         public async Task GenerateProjectAsync(string projectName, string outputDir, List<string> modulesToAdd)
@@ -47,6 +48,9 @@ namespace Myrtus.Clarity.Generator.Common
                         }
                     }
                 }
+
+                // NEW: Process files under the modules/ directory after submodules are updated
+                await RenameModulesAsync(projectName);
 
                 FinalizeProjectAsync(projectName, outputDir);
             }
@@ -95,7 +99,6 @@ namespace Myrtus.Clarity.Generator.Common
                 var lines = File.ReadAllLines(cmsGitModulesPath).ToList();
                 // Assuming that the nested submodule is named 'core'
                 lines.RemoveAll(line => line.Contains($"path = {modulePath}/core", StringComparison.OrdinalIgnoreCase));
-
                 await File.WriteAllLinesAsync(cmsGitModulesPath, lines);
             }
 
@@ -110,7 +113,6 @@ namespace Myrtus.Clarity.Generator.Common
         private async Task CloneTemplateRepositoryAsync()
         {
             _status.Status = "[bold yellow]Cloning template repository...[/]";
-
             var result = await RunProcessAsync("git", $"clone {_config.Template.GitRepoUrl} \"{_tempDir}\"");
             if (!result.Success)
             {
@@ -121,18 +123,15 @@ namespace Myrtus.Clarity.Generator.Common
         private async Task RenameProjectAsync(string newName)
         {
             _status.Status = "[bold yellow]Renaming project files and contents...[/]";
-
             var oldName = _config.Template.TemplateName;
-            var oldCoreName = oldName + ".Core";
 
             var allDirectories = Directory.GetDirectories(_tempDir, "*", SearchOption.AllDirectories)
-                                        .OrderBy(d => d.Length)
-                                        .ToList();
+                .OrderBy(d => d.Length)
+                .ToList();
 
             foreach (var dir in allDirectories)
             {
                 if (ShouldSkipPath(dir)) continue;
-
                 string newDir = dir.Replace(oldName, newName);
                 if (dir != newDir && !Directory.Exists(newDir))
                 {
@@ -144,9 +143,44 @@ namespace Myrtus.Clarity.Generator.Common
             foreach (var file in allFiles)
             {
                 if (ShouldSkipPath(file)) continue;
-
                 await RenameFileContentsAsync(file, oldName, newName);
+                if (file.EndsWith(".sln.DotSettings"))
+                {
+                    File.Delete(file);
+                }
+            }
+        }
 
+        private async Task RenameModulesAsync(string newName)
+        {
+            // Process the modules folder (but skip files/folders in any subfolder that belongs to core)
+            string modulesDir = Path.Combine(_tempDir, "modules");
+            if (!Directory.Exists(modulesDir))
+                return;
+
+            _status.Status = "[bold yellow]Renaming module files and contents...[/]";
+
+            var oldName = _config.Template.TemplateName;
+
+            var allDirectories = Directory.GetDirectories(modulesDir, "*", SearchOption.AllDirectories)
+                .OrderBy(d => d.Length)
+                .ToList();
+
+            foreach (var dir in allDirectories)
+            {
+                if (ShouldSkipPath(dir)) continue;
+                string newDir = dir.Replace(oldName, newName);
+                if (dir != newDir && !Directory.Exists(newDir))
+                {
+                    Directory.Move(dir, newDir);
+                }
+            }
+
+            var allFiles = Directory.GetFiles(modulesDir, "*.*", SearchOption.AllDirectories);
+            foreach (var file in allFiles)
+            {
+                if (ShouldSkipPath(file)) continue;
+                await RenameFileContentsAsync(file, oldName, newName);
                 if (file.EndsWith(".sln.DotSettings"))
                 {
                     File.Delete(file);
@@ -157,7 +191,6 @@ namespace Myrtus.Clarity.Generator.Common
         private async Task UpdateSubmodulesAsync()
         {
             _status.Status = "[bold yellow]Updating submodules...[/]";
-
             var result = await RunProcessAsync("git", $"-C \"{_tempDir}\" submodule update --init --recursive");
             if (!result.Success)
             {
@@ -165,10 +198,10 @@ namespace Myrtus.Clarity.Generator.Common
             }
         }
 
+        // Modified: now uses a normalized, case-insensitive check
         private bool ShouldSkipPath(string path)
         {
             return path.Contains(".git") ||
-                   path.Contains("Migrations") ||
                    path.Contains("tests") ||
                    path.Contains("bin") ||
                    path.Contains("obj") ||
@@ -198,7 +231,6 @@ namespace Myrtus.Clarity.Generator.Common
             {
                 string newFileDirectory = Path.GetDirectoryName(newFilePath)!;
                 Directory.CreateDirectory(newFileDirectory);
-
                 if (!File.Exists(newFilePath))
                 {
                     File.Move(file, newFilePath);
@@ -208,17 +240,20 @@ namespace Myrtus.Clarity.Generator.Common
 
         private string ReplaceContentExcludingCore(string content, string oldName, string newName)
         {
+            // Only replace occurrences of oldName that are not followed by ".Core"
             return Regex.Replace(content, $@"\b{Regex.Escape(oldName)}\b(?!\.Core)", newName);
         }
 
         private string UpdateUsingStatements(string content, string oldName, string newName)
         {
+            // Only replace using statements for oldName.* but not oldName.Core
             return Regex.Replace(content, $@"using\s+{Regex.Escape(oldName)}\.(?!Core)", $"using {newName}.");
         }
 
         private string UpdateProjectReferences(string content, string oldName, string newName)
         {
-            return Regex.Replace(content,
+            return Regex.Replace(
+                content,
                 $@"<ProjectReference\s+Include=""(.*?){Regex.Escape(oldName)}(?!\.Core)(.*?)""",
                 m => $"<ProjectReference Include=\"{m.Groups[1].Value}{newName}{m.Groups[2].Value}\"");
         }
@@ -226,25 +261,19 @@ namespace Myrtus.Clarity.Generator.Common
         private void FinalizeProjectAsync(string projectName, string outputDir)
         {
             _status.Status = "[bold green]Finalizing project...[/]";
-
             var finalPath = Path.Combine(outputDir, projectName);
             if (Directory.Exists(finalPath))
             {
                 Directory.Delete(finalPath, true);
             }
-
             Directory.Move(_tempDir, finalPath);
-
             var tree = new Tree($"[green]Project Generated:[/] {projectName}")
                 .Style(Style.Parse("cyan"));
-
             tree.AddNode($"[blue]Location:[/] [link={finalPath}]{finalPath}[/]");
             tree.AddNode($"[blue]Template:[/] {_config.Template.TemplateName}");
-
             AnsiConsole.Write(new Panel(tree)
                 .Header("Success!")
                 .BorderColor(Color.Green));
-
             AnsiConsole.MarkupLine("\n[grey]Click the path above to open the project location[/]");
         }
 
@@ -284,7 +313,8 @@ namespace Myrtus.Clarity.Generator.Common
             return new ProcessResult(
                 process.ExitCode == 0,
                 string.Join(Environment.NewLine, output),
-                string.Join(Environment.NewLine, error));
+                string.Join(Environment.NewLine, error)
+            );
         }
     }
 }
