@@ -4,6 +4,7 @@
     {
         public TemplateSettings Template { get; set; }
         public List<ModuleSettings> Modules { get; set; } = new List<ModuleSettings>();
+        public List<string> SkipPaths { get; set; } = new List<string>();
     }
 
     public class ModuleSettings

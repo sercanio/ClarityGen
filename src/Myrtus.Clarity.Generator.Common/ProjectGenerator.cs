@@ -31,10 +31,10 @@ namespace Myrtus.Clarity.Generator.Common
             try
             {
                 await CloneTemplateRepositoryAsync();
-                await RenameProjectAsync(projectName);
                 await UpdateSubmodulesAsync();
+                await RenameProjectAsync(projectName);
 
-                if (modulesToAdd != null && modulesToAdd.Count > 0)
+                if (modulesToAdd is { Count: > 0 })
                 {
                     foreach (var module in modulesToAdd)
                     {
@@ -49,64 +49,18 @@ namespace Myrtus.Clarity.Generator.Common
                     }
                 }
 
-                // NEW: Process files under the modules/ directory after submodules are updated
+                // Process files under the modules/ directory after submodules are updated
                 await RenameModulesAsync(projectName);
 
                 FinalizeProjectAsync(projectName, outputDir);
             }
             finally
             {
+                // Safely delete the temporary directory
                 if (Directory.Exists(_tempDir))
                 {
-                    Directory.Delete(_tempDir, true);
+                    ForceDeleteDirectory(_tempDir);
                 }
-            }
-        }
-
-        private async Task AddModuleAsync(string moduleName, string repoUrl)
-        {
-            _status.Status = $"[bold yellow]Adding module '{moduleName}' as a submodule...[/]";
-
-            // Define the relative path where the module will be added
-            string modulePath = Path.Combine("modules", moduleName); // Relative path
-
-            // Ensure the 'modules' directory exists
-            string modulesDirectory = Path.Combine(_tempDir, "modules");
-            if (!Directory.Exists(modulesDirectory))
-            {
-                Directory.CreateDirectory(modulesDirectory);
-            }
-
-            // Run 'git submodule add <repoUrl> <modulePath>' within the cloned template repository
-            var gitCommand = $"submodule add {repoUrl} \"{modulePath}\"";
-            var result = await RunProcessAsync("git", gitCommand, _tempDir);
-
-            if (!result.Success)
-            {
-                AnsiConsole.MarkupLine($"[red]Error:[/] Failed to add module '{moduleName}': {result.Error}");
-                return;
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[green]Success:[/] Module '{moduleName}' added successfully.");
-            }
-
-            // Prevent initialization of nested submodules (like 'core/') within the CMS module
-            // by removing the .gitmodules entry for the nested submodule
-            string cmsGitModulesPath = Path.Combine(_tempDir, ".gitmodules");
-            if (File.Exists(cmsGitModulesPath))
-            {
-                var lines = File.ReadAllLines(cmsGitModulesPath).ToList();
-                // Assuming that the nested submodule is named 'core'
-                lines.RemoveAll(line => line.Contains($"path = {modulePath}/core", StringComparison.OrdinalIgnoreCase));
-                await File.WriteAllLinesAsync(cmsGitModulesPath, lines);
-            }
-
-            // Optionally, remove the nested submodule's directory if it exists
-            string nestedSubmodulePath = Path.Combine(_tempDir, modulePath, "core");
-            if (Directory.Exists(nestedSubmodulePath))
-            {
-                Directory.Delete(nestedSubmodulePath, true);
             }
         }
 
@@ -120,74 +74,6 @@ namespace Myrtus.Clarity.Generator.Common
             }
         }
 
-        private async Task RenameProjectAsync(string newName)
-        {
-            _status.Status = "[bold yellow]Renaming project files and contents...[/]";
-            var oldName = _config.Template.TemplateName;
-
-            var allDirectories = Directory.GetDirectories(_tempDir, "*", SearchOption.AllDirectories)
-                .OrderBy(d => d.Length)
-                .ToList();
-
-            foreach (var dir in allDirectories)
-            {
-                if (ShouldSkipPath(dir)) continue;
-                string newDir = dir.Replace(oldName, newName);
-                if (dir != newDir && !Directory.Exists(newDir))
-                {
-                    Directory.Move(dir, newDir);
-                }
-            }
-
-            var allFiles = Directory.GetFiles(_tempDir, "*.*", SearchOption.AllDirectories);
-            foreach (var file in allFiles)
-            {
-                if (ShouldSkipPath(file)) continue;
-                await RenameFileContentsAsync(file, oldName, newName);
-                if (file.EndsWith(".sln.DotSettings"))
-                {
-                    File.Delete(file);
-                }
-            }
-        }
-
-        private async Task RenameModulesAsync(string newName)
-        {
-            // Process the modules folder (but skip files/folders in any subfolder that belongs to core)
-            string modulesDir = Path.Combine(_tempDir, "modules");
-            if (!Directory.Exists(modulesDir))
-                return;
-
-            _status.Status = "[bold yellow]Renaming module files and contents...[/]";
-
-            var oldName = _config.Template.TemplateName;
-
-            var allDirectories = Directory.GetDirectories(modulesDir, "*", SearchOption.AllDirectories)
-                .OrderBy(d => d.Length)
-                .ToList();
-
-            foreach (var dir in allDirectories)
-            {
-                if (ShouldSkipPath(dir)) continue;
-                string newDir = dir.Replace(oldName, newName);
-                if (dir != newDir && !Directory.Exists(newDir))
-                {
-                    Directory.Move(dir, newDir);
-                }
-            }
-
-            var allFiles = Directory.GetFiles(modulesDir, "*.*", SearchOption.AllDirectories);
-            foreach (var file in allFiles)
-            {
-                if (ShouldSkipPath(file)) continue;
-                await RenameFileContentsAsync(file, oldName, newName);
-                if (file.EndsWith(".sln.DotSettings"))
-                {
-                    File.Delete(file);
-                }
-            }
-        }
-
         private async Task UpdateSubmodulesAsync()
         {
             _status.Status = "[bold yellow]Updating submodules...[/]";
@@ -198,7 +84,83 @@ namespace Myrtus.Clarity.Generator.Common
             }
         }
 
-        // Modified: now uses a normalized, case-insensitive check
+        private async Task RenameProjectAsync(string newName)
+        {
+            _status.Status = "[bold yellow]Renaming project files and contents...[/]";
+            var oldName = _config.Template.TemplateName;
+
+            // Rename directories
+            var allDirectories = Directory.GetDirectories(_tempDir, "*", SearchOption.AllDirectories)
+                .OrderBy(d => d.Length)
+                .ToList();
+
+            foreach (var dir in allDirectories)
+            {
+                if (ShouldSkipPath(dir)) continue;
+                string newDir = dir.Replace(oldName, newName, StringComparison.OrdinalIgnoreCase);
+                if (dir != newDir && !Directory.Exists(newDir))
+                {
+                    Directory.Move(dir, newDir);
+                }
+            }
+
+            // Rename files
+            var allFiles = Directory.GetFiles(_tempDir, "*.*", SearchOption.AllDirectories);
+            foreach (var file in allFiles)
+            {
+                if (ShouldSkipPath(file)) continue;
+
+                await RenameFileContentsAsync(file, oldName, newName);
+
+                // Remove .DotSettings files
+                if (file.EndsWith(".sln.DotSettings", StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Delete(file);
+                }
+            }
+        }
+
+        private async Task RenameModulesAsync(string newName)
+        {
+            string modulesDir = Path.Combine(_tempDir, "modules");
+            if (!Directory.Exists(modulesDir))
+                return;
+
+            _status.Status = "[bold yellow]Renaming module files and contents...[/]";
+            var oldName = _config.Template.TemplateName;
+
+            // Rename module directories
+            var allDirectories = Directory.GetDirectories(modulesDir, "*", SearchOption.AllDirectories)
+                .OrderBy(d => d.Length)
+                .ToList();
+
+            foreach (var dir in allDirectories)
+            {
+                if (ShouldSkipPath(dir)) continue;
+                string newDir = dir.Replace(oldName, newName, StringComparison.OrdinalIgnoreCase);
+                if (dir != newDir && !Directory.Exists(newDir))
+                {
+                    Directory.Move(dir, newDir);
+                }
+            }
+
+            // Rename module files
+            var allFiles = Directory.GetFiles(modulesDir, "*.*", SearchOption.AllDirectories);
+            foreach (var file in allFiles)
+            {
+                if (ShouldSkipPath(file)) continue;
+
+                await RenameFileContentsAsync(file, oldName, newName);
+
+                // Remove .DotSettings files
+                if (file.EndsWith(".sln.DotSettings", StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Delete(file);
+                }
+            }
+        }
+
+        // Keep fix_modulesRenaming approach for skipping paths
         private bool ShouldSkipPath(string path)
         {
             return path.Contains(".git") ||
@@ -209,25 +171,100 @@ namespace Myrtus.Clarity.Generator.Common
                    path.Contains($"{Path.DirectorySeparatorChar}.Core{Path.DirectorySeparatorChar}");
         }
 
+        private async Task AddModuleAsync(string moduleName, string repoUrl)
+        {
+            _status.Status = $"[bold yellow]Adding module '{moduleName}' as a submodule...[/]";
+
+            // Define the relative path where the module will be added
+            string modulePath = Path.Combine("modules", moduleName);
+
+            // Ensure the 'modules' directory exists
+            string modulesDirectory = Path.Combine(_tempDir, "modules");
+            if (!Directory.Exists(modulesDirectory))
+            {
+                Directory.CreateDirectory(modulesDirectory);
+            }
+
+            var gitCommand = $"submodule add {repoUrl} \"{modulePath}\"";
+            var result = await RunProcessAsync("git", gitCommand, _tempDir);
+
+            if (!result.Success)
+            {
+                AnsiConsole.MarkupLine($"[red]Error:[/] Failed to add module '{moduleName}': {result.Error}");
+                return;
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[green]Success:[/] Module '{moduleName}' added successfully.");
+            }
+
+            // Prevent initialization of nested submodules (like 'core/') within this module
+            string cmsGitModulesPath = Path.Combine(_tempDir, ".gitmodules");
+            if (File.Exists(cmsGitModulesPath))
+            {
+                var lines = File.ReadAllLines(cmsGitModulesPath).ToList();
+                // Remove lines for any nested submodule in "core" path
+                lines.RemoveAll(line => line.Contains($"path = {modulePath}/core", StringComparison.OrdinalIgnoreCase));
+                await File.WriteAllLinesAsync(cmsGitModulesPath, lines);
+            }
+
+            // Optionally, remove the nested submodule directory if it exists
+            string nestedSubmodulePath = Path.Combine(_tempDir, modulePath, "core");
+            if (Directory.Exists(nestedSubmodulePath))
+            {
+                Directory.Delete(nestedSubmodulePath, true);
+            }
+        }
+
         private async Task RenameFileContentsAsync(string file, string oldName, string newName)
         {
+            // Read file content
             var content = await File.ReadAllTextAsync(file);
-            content = ReplaceContentExcludingCore(content, oldName, newName);
 
-            if (file.EndsWith(".cs") || file.EndsWith(".cshtml"))
+            // Replace all occurrences of oldName except those followed by ".Core"
+            content = Regex.Replace(
+                content,
+                $@"{Regex.Escape(oldName)}(?!\.Core)",
+                newName,
+                RegexOptions.IgnoreCase
+            );
+
+            // For .cs or .cshtml, also fix 'using' and 'namespace'
+            if (file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
+                file.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase))
             {
-                content = UpdateUsingStatements(content, oldName, newName);
+                content = Regex.Replace(
+                    content,
+                    $@"using\s+{Regex.Escape(oldName)}\.(?!Core)",
+                    $"using {newName}.",
+                    RegexOptions.IgnoreCase
+                );
+
+                content = Regex.Replace(
+                    content,
+                    $@"namespace\s+{Regex.Escape(oldName)}\.(?!Core)",
+                    $"namespace {newName}.",
+                    RegexOptions.IgnoreCase
+                );
             }
 
-            if (file.EndsWith(".csproj"))
+            // For .csproj, update <ProjectReference Include="...">
+            if (file.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
             {
-                content = UpdateProjectReferences(content, oldName, newName);
+                content = Regex.Replace(
+                    content,
+                    $@"<ProjectReference\s+Include=""(.*?){Regex.Escape(oldName)}(?!\.Core)(.*?)""",
+                    m => $"<ProjectReference Include=\"{m.Groups[1].Value}{newName}{m.Groups[2].Value}\"",
+                    RegexOptions.IgnoreCase
+                );
             }
 
+            // Write updated content
             await File.WriteAllTextAsync(file, content);
 
-            string newFilePath = file.Replace(oldName, newName);
-            if (file != newFilePath)
+            // Finally, rename the file itself if it contains oldName
+            string newFilePath = file.Replace(oldName, newName, StringComparison.OrdinalIgnoreCase);
+            if (!string.Equals(file, newFilePath, StringComparison.OrdinalIgnoreCase))
             {
                 string newFileDirectory = Path.GetDirectoryName(newFilePath)!;
                 Directory.CreateDirectory(newFileDirectory);
@@ -238,43 +275,46 @@ namespace Myrtus.Clarity.Generator.Common
             }
         }
 
-        private string ReplaceContentExcludingCore(string content, string oldName, string newName)
-        {
-            // Only replace occurrences of oldName that are not followed by ".Core"
-            return Regex.Replace(content, $@"\b{Regex.Escape(oldName)}\b(?!\.Core)", newName);
-        }
-
-        private string UpdateUsingStatements(string content, string oldName, string newName)
-        {
-            // Only replace using statements for oldName.* but not oldName.Core
-            return Regex.Replace(content, $@"using\s+{Regex.Escape(oldName)}\.(?!Core)", $"using {newName}.");
-        }
-
-        private string UpdateProjectReferences(string content, string oldName, string newName)
-        {
-            return Regex.Replace(
-                content,
-                $@"<ProjectReference\s+Include=""(.*?){Regex.Escape(oldName)}(?!\.Core)(.*?)""",
-                m => $"<ProjectReference Include=\"{m.Groups[1].Value}{newName}{m.Groups[2].Value}\"");
-        }
-
         private void FinalizeProjectAsync(string projectName, string outputDir)
         {
             _status.Status = "[bold green]Finalizing project...[/]";
             var finalPath = Path.Combine(outputDir, projectName);
+
             if (Directory.Exists(finalPath))
             {
                 Directory.Delete(finalPath, true);
             }
             Directory.Move(_tempDir, finalPath);
+
             var tree = new Tree($"[green]Project Generated:[/] {projectName}")
                 .Style(Style.Parse("cyan"));
             tree.AddNode($"[blue]Location:[/] [link={finalPath}]{finalPath}[/]");
             tree.AddNode($"[blue]Template:[/] {_config.Template.TemplateName}");
-            AnsiConsole.Write(new Panel(tree)
-                .Header("Success!")
-                .BorderColor(Color.Green));
+
+            AnsiConsole.Write(
+                new Panel(tree)
+                    .Header("Success!")
+                    .BorderColor(Color.Green)
+            );
+
             AnsiConsole.MarkupLine("\n[grey]Click the path above to open the project location[/]");
+        }
+
+        private void ForceDeleteDirectory(string directoryPath)
+        {
+            var directoryInfo = new DirectoryInfo(directoryPath);
+
+            foreach (var fileInfo in directoryInfo.GetFiles("*", SearchOption.AllDirectories))
+            {
+                fileInfo.Attributes = FileAttributes.Normal;
+            }
+
+            foreach (var subDirInfo in directoryInfo.GetDirectories("*", SearchOption.AllDirectories))
+            {
+                subDirInfo.Attributes = FileAttributes.Normal;
+            }
+
+            Directory.Delete(directoryPath, true);
         }
 
         private record ProcessResult(bool Success, string Output, string Error);
@@ -302,8 +342,14 @@ namespace Myrtus.Clarity.Generator.Common
             var output = new List<string>();
             var error = new List<string>();
 
-            process.OutputDataReceived += (s, e) => { if (e.Data != null) output.Add(e.Data); };
-            process.ErrorDataReceived += (s, e) => { if (e.Data != null) error.Add(e.Data); };
+            process.OutputDataReceived += (s, e) =>
+            {
+                if (e.Data != null) output.Add(e.Data);
+            };
+            process.ErrorDataReceived += (s, e) =>
+            {
+                if (e.Data != null) error.Add(e.Data);
+            };
 
             process.Start();
             process.BeginOutputReadLine();
