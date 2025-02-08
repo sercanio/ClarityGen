@@ -236,20 +236,39 @@ namespace Myrtus.Clarity.Generator.Common
         private async Task RenameFileContentsAsync(string file, string oldName, string newName)
         {
             var content = await File.ReadAllTextAsync(file);
-            content = ReplaceContentExcludingCore(content, oldName, newName);
 
+            // Apply standard replacements for project files.
+            content = ReplaceContentExcludingCore(content, oldName, newName);
             if (file.EndsWith(".cs") || file.EndsWith(".cshtml"))
             {
                 content = UpdateUsingStatements(content, oldName, newName);
             }
-
             if (file.EndsWith(".csproj"))
             {
                 content = UpdateProjectReferences(content, oldName, newName);
             }
 
+            // Additional handling for docker-compose.yml
+            if (Path.GetFileName(file).Equals("docker-compose.yml", StringComparison.OrdinalIgnoreCase))
+            {
+                // Replace all occurrences of "Myrtus" with the new app name.
+                content = Regex.Replace(content, @"Myrtus", newName, RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"src/Myrtus\.Clarity\.WebAPI/Dockerfile", $"src/{newName}.Clarity.WebAPI/Dockerfile", RegexOptions.IgnoreCase);
+            }
+
+            // Additional handling for appsettings.json connection strings.
+            if (Path.GetFileName(file).Equals("appsettings.json", StringComparison.OrdinalIgnoreCase))
+            {
+                // Replace specific connection endpoints.
+                content = Regex.Replace(content, @"Myrtus-db", newName + "-db", RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"Myrtus-redis", newName + "-redis", RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"Myrtus-mongodb", newName + "-mongodb", RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"Myrtus-seq", newName + "-seq", RegexOptions.IgnoreCase);
+            }
+
             await File.WriteAllTextAsync(file, content);
 
+            // Rename the file itself if its path contains the old template name.
             string newFilePath = file.Replace(oldName, newName);
             if (file != newFilePath)
             {
@@ -261,6 +280,7 @@ namespace Myrtus.Clarity.Generator.Common
                 }
             }
         }
+
 
         private string ReplaceContentExcludingCore(string content, string oldName, string newName)
         {
