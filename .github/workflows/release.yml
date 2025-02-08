@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
@@ -32,8 +34,6 @@ jobs:
 
       - name: Update version (optional)
         run: |
-          # Use your script to update your csproj file with the new version
-          # For example, using a tool or a custom script.
           echo "Updating version to $(jq -r '.SemVer' version.json)"
           # Your custom version bumping script here
 
