@@ -21,6 +21,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{88A08910-6751-4CBC-BA6A-4D623A47FF76}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Myrtus.Clarity.Generator.Tests", "tests\Myrtus.Clarity.Generator.Tests\Myrtus.Clarity.Generator.Tests.csproj", "{5E9F49F9-B428-42E5-A766-4B3479D54856}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +47,10 @@ Global
 		{AACD774F-01FA-4656-AB59-DF034CC893B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AACD774F-01FA-4656-AB59-DF034CC893B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AACD774F-01FA-4656-AB59-DF034CC893B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E9F49F9-B428-42E5-A766-4B3479D54856}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E9F49F9-B428-42E5-A766-4B3479D54856}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E9F49F9-B428-42E5-A766-4B3479D54856}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E9F49F9-B428-42E5-A766-4B3479D54856}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,5 +60,6 @@ Global
 		{0F33380B-0EB2-4335-B00F-A1E3F81EF8D0} = {246306A9-1C35-4D26-874A-C612D2C3DCE2}
 		{CB0598EA-9131-4E77-82CA-24FD5FB99619} = {246306A9-1C35-4D26-874A-C612D2C3DCE2}
 		{AACD774F-01FA-4656-AB59-DF034CC893B3} = {246306A9-1C35-4D26-874A-C612D2C3DCE2}
+		{5E9F49F9-B428-42E5-A766-4B3479D54856} = {88A08910-6751-4CBC-BA6A-4D623A47FF76}
 	EndGlobalSection
 EndGlobal

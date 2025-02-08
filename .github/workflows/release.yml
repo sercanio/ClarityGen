@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+    # Alternatively, trigger on a tag:
+    # tags: ['v*']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install GitVersion (optional)
+        run: dotnet tool install --global GitVersion.Tool
+
+      - name: Determine version (optional)
+        id: gitversion
+        run: |
+          dotnet gitversion /output json > version.json
+          cat version.json
+        env:
+          DOTNET_CLI_HOME: /tmp
+
+      - name: Update version (optional)
+        run: |
+          # Use your script to update your csproj file with the new version
+          # For example, using a tool or a custom script.
+          echo "Updating version to $(jq -r '.SemVer' version.json)"
+          # Your custom version bumping script here
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "chore(release): bump version to $(jq -r '.SemVer' version.json)" || echo "No changes to commit"
+          git push
+
+      - name: Create Git Tag
+        run: |
+          VERSION=$(jq -r '.SemVer' version.json)
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+
+      - name: Build and Pack
+        run: dotnet pack --configuration Release
+
+      - name: Publish to NuGet
+        run: dotnet nuget push ../nupkg/Myrtus.Clarity.Generator.$(jq -r '.SemVer' version.json).nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
