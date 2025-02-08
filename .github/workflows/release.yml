@@ -63,4 +63,8 @@ jobs:
         run: dotnet pack --configuration Release
 
       - name: Publish to NuGet
-        run: dotnet nuget push src/Myrtus.Clarity.Generator.Presentation/bin/Release/Myrtus.Clarity.Generator.$(jq -r '.SemVer' version.json).nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+        run: |
+          # Find the generated package file (assumes only one .nupkg exists in the folder)
+          PACKAGE=$(ls ./nupkg/*.nupkg)
+          echo "Publishing package: $PACKAGE"
+          dotnet nuget push "$PACKAGE" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
