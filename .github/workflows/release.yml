@@ -1,5 +1,9 @@
 name: Release
 
+permissions:
+  contents: write
+  pull-requests: write
+
 on:
   push:
     branches: [ main ]
@@ -34,8 +38,6 @@ jobs:
 
       - name: Update version (optional)
         run: |
-          # Use your script to update your csproj file with the new version.
-          # For example, using a tool or a custom script.
           echo "Updating version to $(jq -r '.SemVer' version.json)"
           # Your custom version bumping script here
 
