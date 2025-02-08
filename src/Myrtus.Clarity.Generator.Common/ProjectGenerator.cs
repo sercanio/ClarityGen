@@ -34,24 +34,49 @@ namespace Myrtus.Clarity.Generator.Common
                 await RenameProjectAsync(projectName);
                 await UpdateSubmodulesAsync();
 
+                // Remove the 'cms' module if it was updated automatically but not selected by the user.
+                if (!modulesToAdd.Any(m => m.Equals("cms", StringComparison.OrdinalIgnoreCase)))
+                {
+                    // Remove the cms folder if it exists
+                    string cmsModulePath = Path.Combine(_tempDir, "modules", "cms");
+                    if (Directory.Exists(cmsModulePath))
+                    {
+                        Directory.Delete(cmsModulePath, true);
+                        AnsiConsole.MarkupLine("[yellow]Note:[/] 'cms' folder removed since it was not selected.");
+                    }
+
+                    // Remove any reference to cms from the .gitmodules file
+                    string gitmodulesPath = Path.Combine(_tempDir, ".gitmodules");
+                    if (File.Exists(gitmodulesPath))
+                    {
+                        var lines = File.ReadAllLines(gitmodulesPath).ToList();
+                        // Remove any line that mentions the cms module (adjust the keyword if needed)
+                        lines.RemoveAll(line => line.Contains("modules/cms", StringComparison.OrdinalIgnoreCase));
+                        await File.WriteAllLinesAsync(gitmodulesPath, lines);
+                    }
+                }
+
+                // Add any modules specified by the user that aren’t already present
                 if (modulesToAdd != null && modulesToAdd.Count > 0)
                 {
                     foreach (var module in modulesToAdd)
                     {
-                        if (_availableModules.ContainsKey(module))
-                        {
-                            await AddModuleAsync(module, _availableModules[module]);
-                        }
-                        else
+                        // Check if the module already exists (it might have been updated as a submodule)
+                        string moduleFolder = Path.Combine(_tempDir, "modules", module);
+                        if (!_availableModules.ContainsKey(module))
                         {
                             AnsiConsole.MarkupLine($"[yellow]Warning:[/] Module '{module}' is not recognized and will be skipped.");
+                            continue;
+                        }
+                        if (!Directory.Exists(moduleFolder))
+                        {
+                            await AddModuleAsync(module, _availableModules[module]);
                         }
                     }
                 }
 
-                // NEW: Process files under the modules/ directory after submodules are updated
+                // Process modules (renaming, etc.)
                 await RenameModulesAsync(projectName);
-
                 FinalizeProjectAsync(projectName, outputDir);
             }
             finally
@@ -62,7 +87,6 @@ namespace Myrtus.Clarity.Generator.Common
                 }
             }
         }
-
         private async Task AddModuleAsync(string moduleName, string repoUrl)
         {
             _status.Status = $"[bold yellow]Adding module '{moduleName}' as a submodule...[/]";
