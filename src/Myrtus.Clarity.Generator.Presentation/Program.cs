@@ -8,17 +8,17 @@ namespace Myrtus.Clarity.Generator.Presentation
     {
         static async Task Main(string[] args)
         {
-            // Draw the title in a stylish way.
+            // Draw the title in a stylish way
             AnsiConsole.Write(new FigletText("ClarityGen").Color(Color.Cyan1));
 
             string projectName = string.Empty;
             string outputDirectory = string.Empty;
             List<string> modulesToAdd = new List<string>();
 
-            // Separate positional arguments from flags.
+            // We'll separate positional arguments from flags.
             List<string> positionalArgs = new List<string>();
 
-            // Process command line arguments.
+            // Process command line arguments:
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i].Equals("--add-module", StringComparison.OrdinalIgnoreCase))
@@ -44,7 +44,7 @@ namespace Myrtus.Clarity.Generator.Presentation
             if (positionalArgs.Count > 1)
                 outputDirectory = positionalArgs[1];
 
-            // If project name or output directory weren't provided, ask for them interactively.
+            // Ask interactively if project name or output directory weren't provided.
             if (string.IsNullOrWhiteSpace(projectName))
                 projectName = AnsiConsole.Ask<string>("[yellow]Enter project name:[/]");
             
@@ -55,10 +55,38 @@ namespace Myrtus.Clarity.Generator.Presentation
                     outputDirectory = AppDomain.CurrentDomain.BaseDirectory;
             }
 
-            // Note: If no modules are specified via command line, we do not prompt interactively.
-            // The modulesToAdd list remains empty and the project is created without additional modules.
+            // If no modules were specified via command line, prompt interactively.
+            if (modulesToAdd.Count == 0)
+            {
+                var configService = new ConfigurationService();
+                var config = await configService.LoadConfigurationAsync();
 
-            // Hand over the parameters to your GeneratorService.
+                if (config != null && config.Modules != null && config.Modules.Any())
+                {
+                    var prompt = new MultiSelectionPrompt<string>()
+                        .Title("Select modules to add to the project:")
+                        .NotRequired() // User may choose no module.
+                        .PageSize(10)
+                        .MoreChoicesText("[grey](Use space to toggle and enter to accept)[/]")
+                        .InstructionsText("[blue](Press [green]<space>[/] to toggle a module, [green]<enter>[/] to accept)[/]");
+                    
+                    // Add each module individually.
+                    foreach (var module in config.Modules.Select(m => m.Name))
+                    {
+                        prompt.AddChoice(module);
+                    }
+
+                    // Preselect "cms" if it exists.
+                    if (config.Modules.Any(m => m.Name.Equals("cms", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        prompt.Select("cms");
+                    }
+
+                    modulesToAdd = AnsiConsole.Prompt(prompt);
+                }
+            }
+
+            // Now hand over the parameters to your GeneratorService.
             var generatorService = new GeneratorService();
             await generatorService.RunGeneratorAsync(projectName, outputDirectory, modulesToAdd);
         }
