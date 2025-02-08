@@ -65,6 +65,6 @@ jobs:
       - name: Publish to NuGet
         run: |
           # Find the generated package file (assumes only one .nupkg exists in the folder)
-          PACKAGE=$(ls ./nupkg/*.nupkg)
+          PACKAGE=$(ls src/Myrtus.Clarity.Generator.Presentation/bin/Release/*.nupkg)
           echo "Publishing package: $PACKAGE"
           dotnet nuget push "$PACKAGE" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
