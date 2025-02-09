@@ -44,19 +44,37 @@ namespace Myrtus.Clarity.Generator.Presentation
             if (positionalArgs.Count > 1)
                 outputDirectory = positionalArgs[1];
 
-            // Ask interactively if project name or output directory weren't provided.
+            // Handle interactive input based on the environment
+            bool isInteractiveMode = !args.Contains("--non-interactive") && !Console.IsInputRedirected;
+
             if (string.IsNullOrWhiteSpace(projectName))
-                projectName = AnsiConsole.Ask<string>("[yellow]Enter project name:[/]");
-            
-            if (string.IsNullOrWhiteSpace(outputDirectory))
             {
-                outputDirectory = AnsiConsole.Ask<string>("[yellow]Enter output directory (or press Enter for current):[/]");
-                if (string.IsNullOrWhiteSpace(outputDirectory))
-                    outputDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                if (isInteractiveMode)
+                {
+                    projectName = AnsiConsole.Ask<string>("[yellow]Enter project name:[/]");
+                }
+                else
+                {
+                    throw new InvalidOperationException("Project name must be provided in non-interactive mode.");
+                }
             }
 
-            // If no modules were specified via command line, prompt interactively.
-            if (modulesToAdd.Count == 0)
+            if (string.IsNullOrWhiteSpace(outputDirectory))
+            {
+                if (isInteractiveMode)
+                {
+                    outputDirectory = AnsiConsole.Ask<string>("[yellow]Enter output directory (or press Enter for current):[/]");
+                    if (string.IsNullOrWhiteSpace(outputDirectory))
+                        outputDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Output directory must be provided in non-interactive mode.");
+                }
+            }
+
+            // If no modules were specified via command line, prompt interactively if allowed.
+            if (modulesToAdd.Count == 0 && isInteractiveMode)
             {
                 var configService = new ConfigurationService();
                 var config = await configService.LoadConfigurationAsync();
