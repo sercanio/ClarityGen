@@ -10,7 +10,7 @@
 ````
 **Clarity Generator** is a powerful tool designed to streamline the creation of project templates. By automating the process of cloning repositories, renaming files and contents, updating submodules, and finalizing setups, it helps developers save time and effort.
 
-![Version](https://img.shields.io/badge/version-0.2.4-blue)
+![Version](https://img.shields.io/badge/version-0.2.5-blue)
 ![DotNet](https://img.shields.io/badge/dotnet-v9.0-purple)
 ![MIT License](https://img.shields.io/badge/license-MIT-green)
 ![Build Status](https://img.shields.io/github/actions/workflow/status/sercanio/Myrtus.Clarity/build.yml?branch=main)
@@ -73,19 +73,19 @@ Run the application by providing the project name and output directory as comman
 
 ### Syntax:
 ````bash
-ClarityGen.exe <ProjectName> <OutputDirectory> [--add-module <ModuleName>]...
+ClarityGen <ProjectName> <OutputDirectory> [--add-module <ModuleName>]...
 ````
 
 #### Example:
 ```bash
-ClarityGen.exe MyNewProject C:\Users\serca\source\repos\sercanio\tmp --add-module cms
+ClarityGen MyNewProject /path/to/project/location --add-module cms
 ```
 
 ### **Interactive Mode**
 If no arguments are provided, the program will prompt for the project name and output directory:
 
 ```bash
-ClarityGen.exe
+ClarityGen
 ```
 
 ---
