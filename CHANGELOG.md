@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.7] - 2025-02-09
+
+### Added
+- **Interactive Module Selection:**
+  - Added support for interactive module selection if no modules are specified via command line.
+  - Preselects "cms" module if it exists in the configuration.
+
+- **WebUI Module Integration:**
+  - Added support for integrating a WebUI module.
+  - Updates `docker-compose.yml` to include a WebUI service and forces image names to lowercase.
+
+### Changed
+- **Command-Line Argument Handling:**
+  - Improved command-line argument handling to separate positional arguments from flags.
+  - Enhanced error handling for non-interactive mode.
+
+### Fixed
+- **Bug Fixes:**
+  - Fixed issues related to renaming project files and contents.
+  - Corrected handling of submodule updates and module additions.
+
 ## [v0.2.6] - 2025-02-09
 
 ### Added

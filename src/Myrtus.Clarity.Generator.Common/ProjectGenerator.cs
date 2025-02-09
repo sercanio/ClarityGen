@@ -321,7 +321,7 @@ namespace Myrtus.Clarity.Generator.Common
         /// </summary>
         private async Task RenameModuleAsync(string newName, string moduleDir)
         {
-            string oldName = "Myrtus"; // Assumed common string to replace.
+            string oldName = _config.Template.TemplateName;
             var allFiles = Directory.GetFiles(moduleDir, "*.*", SearchOption.AllDirectories);
             foreach (var file in allFiles)
             {
@@ -356,7 +356,7 @@ namespace Myrtus.Clarity.Generator.Common
         /// </summary>
         private async Task RenameWebUIAsync(string newName, string targetDir)
         {
-            string oldName = "Myrtus";
+            string oldName = _config.Template.TemplateName;
             var allFiles = Directory.GetFiles(targetDir, "*.*", SearchOption.AllDirectories);
             foreach (var file in allFiles)
             {
@@ -412,12 +412,12 @@ namespace Myrtus.Clarity.Generator.Common
             {
                 // Define the webui service block.
                 var webUIBlock = $@"
-  {newName}-webui:
-    image: {newName}-webui
+  {newName.ToLowerInvariant()}-webui:
+    image: {newName.ToLowerInvariant()}-webui
     build:
       context: ./WebUI
       dockerfile: Dockerfile
-    container_name: {newName}.webui
+    container_name: {newName}.WebUI
     ports:
       - ""3000:80""
     labels:
@@ -425,6 +425,7 @@ namespace Myrtus.Clarity.Generator.Common
       - 'traefik.http.routers.webui.rule=Host(`localhost`) && PathPrefix(`/`)'
       - ""traefik.http.routers.webui.entrypoints=web""
       - ""traefik.http.services.webui.loadbalancer.server.port=80""
+      
 ";
 
                 // Use a regex in multiline mode to find the top-level "volumes:" key (at the beginning of a line)
@@ -513,7 +514,9 @@ namespace Myrtus.Clarity.Generator.Common
         /// </summary>
         private string ReplaceContentExcludingCore(string content, string oldName, string newName)
         {
-            return Regex.Replace(content, $@"\b{Regex.Escape(oldName)}\b(?!\.Core)", newName);
+            // This negative lookahead ensures that after oldName, if there's any series of dot tokens ending in .Core,
+            // the replacement is skipped.
+            return Regex.Replace(content, $@"\b{Regex.Escape(oldName)}\b(?!((\.[A-Za-z0-9]+)*\.Core\b))", newName);
         }
 
         /// <summary>
@@ -521,7 +524,7 @@ namespace Myrtus.Clarity.Generator.Common
         /// </summary>
         private string UpdateUsingStatements(string content, string oldName, string newName)
         {
-            return Regex.Replace(content, $@"using\s+{Regex.Escape(oldName)}\.(?!Core)", $"using {newName}.");
+            return Regex.Replace(content, $@"using\s+{Regex.Escape(oldName)}\.(?!((\w+\.)*Core\b))", $"using {newName}.");
         }
 
         /// <summary>
@@ -531,10 +534,11 @@ namespace Myrtus.Clarity.Generator.Common
         {
             return Regex.Replace(
                 content,
-                $@"(<ProjectReference\s+Include=\""[^\""]*?){Regex.Escape(oldName)}(?!\.Core)([^\""]*\"")",
-                m => $"{m.Groups[1].Value}{newName}{m.Groups[2].Value}"
+                $@"(<ProjectReference\s+Include=\""[^\""]*?){Regex.Escape(oldName)}(?!((\.[A-Za-z0-9]+)*\.Core\b))([^\""]*\"")",
+                m => $"{m.Groups[1].Value}{newName}{m.Groups[4].Value}"
             );
         }
+
 
         /// <summary>
         /// Moves the generated project from the temporary directory to the output directory,
