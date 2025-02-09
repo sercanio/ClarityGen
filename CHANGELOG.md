@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.6] - 2025-02-09
+
+### Added
+- **Frontend Code Generation:**
+  - Introduced a new feature for generating frontend boilerplate code along with backend setup, simplifying the process of scaffolding both frontend and backend parts of the application.
+  - Supported frameworks and libraries like React, TailwindCSS, and Ant Design for seamless integration into generated projects.
+
+- **Dynamic Module Loading:**
+  - Added support for dynamically loading and unloading modules based on user configuration in the `modules` directory.
+  - Optimized the system to automatically detect new modules and integrate them into the project structure without requiring additional configuration steps.
+
+### Changed
+- **Code Generator Enhancements:**
+  - Improved the code generator to handle frontend creation, including routing setup, component scaffolding, and initial state management.
+  - Refined the backend code generator to ensure consistency in naming conventions and project structure.
+  
+- **Project Initialization Flow:**
+  - Simplified project initialization by adding a prompt for module selection during setup, ensuring the correct modules are added based on user input.
+  - Enhanced user prompts for selecting additional features or configurations during project setup.
+
+### Fixed
+- **Bug Fixes:**
+  - Fixed issues where the frontend code generation would miss necessary dependencies in some edge cases.
+  - Corrected a bug in module integration where specific routes were not properly linked when dynamically loading additional modules.
+
 ## [v0.2.0] - 2024-04-27
 
 ### Added
@@ -42,4 +67,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Renaming project files and contents dynamically based on the new project name.
     - Updating and initializing Git submodules.
     - Finalizing and organizing the generated project in a customizable output directory.
-
