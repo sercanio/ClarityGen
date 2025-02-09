@@ -25,21 +25,23 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Install GitVersion (optional)
-        run: dotnet tool install --global GitVersion.Tool
+      # Remove or comment out the GitVersion step if versioning is not needed
+      # - name: Install GitVersion (optional)
+      #   run: dotnet tool install --global GitVersion.Tool
 
-      - name: Determine version (optional)
-        id: gitversion
-        run: |
-          dotnet gitversion /output json > version.json
-          cat version.json
-        env:
-          DOTNET_CLI_HOME: /tmp
+      # Remove or comment out the version determination and tagging steps
+      # - name: Determine version (optional)
+      #   id: gitversion
+      #   run: |
+      #     dotnet gitversion /output json > version.json
+      #     cat version.json
+      #   env:
+      #     DOTNET_CLI_HOME: /tmp
 
-      - name: Update version (optional)
-        run: |
-          echo "Updating version to $(jq -r '.SemVer' version.json)"
-          # Your custom version bumping script here
+      # - name: Update version (optional)
+      #   run: |
+      #     echo "Updating version to $(jq -r '.SemVer' version.json)"
+      #     # Your custom version bumping script here
 
       - name: Configure Git for pushing
         run: |
@@ -50,14 +52,15 @@ jobs:
       - name: Commit version bump
         run: |
           git add .
-          git commit -m "chore(release): bump version to $(jq -r '.SemVer' version.json)" || echo "No changes to commit"
+          git commit -m "chore(release): version bump" || echo "No changes to commit"
           git push
 
-      - name: Create Git Tag
-        run: |
-          VERSION=$(jq -r '.SemVer' version.json)
-          git tag "v$VERSION"
-          git push origin "v$VERSION"
+      # Remove or comment out the Git tag creation step
+      # - name: Create Git Tag
+      #   run: |
+      #     VERSION=$(jq -r '.SemVer' version.json)
+      #     git tag "v$VERSION"
+      #     git push origin "v$VERSION"
 
       - name: Build and Pack
         run: dotnet pack --configuration Release

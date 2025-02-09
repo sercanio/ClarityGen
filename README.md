@@ -10,7 +10,7 @@
 ````
 **Clarity Generator** is a powerful tool designed to streamline the creation of project templates. By automating the process of cloning repositories, renaming files and contents, updating submodules, and finalizing setups, it helps developers save time and effort.
 
-![Version](https://img.shields.io/badge/version-0.2.5-blue)
+![Version](https://img.shields.io/badge/version-0.2.6-blue)
 ![DotNet](https://img.shields.io/badge/dotnet-v9.0-purple)
 ![MIT License](https://img.shields.io/badge/license-MIT-green)
 ![Build Status](https://img.shields.io/github/actions/workflow/status/sercanio/Myrtus.Clarity/build.yml?branch=main)
@@ -49,6 +49,10 @@ The generator’s settings are stored in the `appsettings.json` file. Below is a
     {
       "Name": "cms",
       "GitRepoUrl": "https://github.com/sercanio/Myrtus.Clarity.Module.CMS.git"
+    },
+    {
+      "Name": "webui",
+      "GitRepoUrl": "https://github.com/sercanio/Myrtus.Clarity.WebUI.git"
     }
   ],
   "Output": {
@@ -78,7 +82,7 @@ ClarityGen <ProjectName> <OutputDirectory> [--add-module <ModuleName>]...
 
 #### Example:
 ```bash
-ClarityGen MyNewProject /path/to/project/location --add-module cms
+ClarityGen MyNewProject /path/to/project/location --add-module cms webui
 ```
 
 ### **Interactive Mode**
