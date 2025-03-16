@@ -25,6 +25,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{88A08910
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Myrtus.Clarity.Generator.Tests", "tests\Myrtus.Clarity.Generator.Tests\Myrtus.Clarity.Generator.Tests.csproj", "{5E9F49F9-B428-42E5-A766-4B3479D54856}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{579DA3F3-616F-4115-9630-2A9B011E6157}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{FA7D05B8-79EB-418C-859E-C3EFC5E50C37}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\release.yml = .github\workflows\release.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".idea", ".idea", "{4A460C7F-152A-4C68-B656-5C4119E23006}"
+	ProjectSection(SolutionItems) = preProject
+		.idea\.idea.Myrtus.Clarity.Generator\.idea\.gitignore = .idea\.idea.Myrtus.Clarity.Generator\.idea\.gitignore
+		.idea\.idea.Myrtus.Clarity.Generator\.idea\encodings.xml = .idea\.idea.Myrtus.Clarity.Generator\.idea\encodings.xml
+		.idea\.idea.Myrtus.Clarity.Generator\.idea\indexLayout.xml = .idea\.idea.Myrtus.Clarity.Generator\.idea\indexLayout.xml
+		.idea\.idea.Myrtus.Clarity.Generator\.idea\projectSettingsUpdater.xml = .idea\.idea.Myrtus.Clarity.Generator\.idea\projectSettingsUpdater.xml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,5 +76,8 @@ Global
 		{CB0598EA-9131-4E77-82CA-24FD5FB99619} = {246306A9-1C35-4D26-874A-C612D2C3DCE2}
 		{AACD774F-01FA-4656-AB59-DF034CC893B3} = {246306A9-1C35-4D26-874A-C612D2C3DCE2}
 		{5E9F49F9-B428-42E5-A766-4B3479D54856} = {88A08910-6751-4CBC-BA6A-4D623A47FF76}
+		{579DA3F3-616F-4115-9630-2A9B011E6157} = {C4C6D36D-215B-426A-AD79-2D9F70DB7C32}
+		{FA7D05B8-79EB-418C-859E-C3EFC5E50C37} = {579DA3F3-616F-4115-9630-2A9B011E6157}
+		{4A460C7F-152A-4C68-B656-5C4119E23006} = {C4C6D36D-215B-426A-AD79-2D9F70DB7C32}
 	EndGlobalSection
 EndGlobal

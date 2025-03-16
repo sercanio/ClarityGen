@@ -10,12 +10,10 @@
 ````
 **Clarity Generator** is a powerful tool designed to streamline the creation of project templates. By automating the process of cloning repositories, renaming files and contents, updating submodules, and finalizing setups, it helps developers save time and effort.
 
-![Version](https://img.shields.io/badge/version-0.2.7-blue)
+![Version](https://img.shields.io/badge/version-0.2.8-blue)
 ![DotNet](https://img.shields.io/badge/dotnet-v9.0-purple)
 ![MIT License](https://img.shields.io/badge/license-MIT-green)
-![Build Status](https://img.shields.io/github/actions/workflow/status/sercanio/Myrtus.Clarity/build.yml?branch=main)
-
-
+![Build Status](https://img.shields.io/github/actions/workflow/status/sercanio/Myrtus.Clarity.Generator/release.yml?branch=main)
 ---
 ## Table of Contents
 1. [Features](#features)
@@ -42,8 +40,8 @@ The generator’s settings are stored in the `appsettings.json` file. Below is a
 ```json
 {
   "Template": {
-    "GitRepoUrl": "https://github.com/sercanio/Myrtus.Clarity.git",
-    "TemplateName": "Myrtus.Clarity"
+    "GitRepoUrl": "https://github.com/sercanio/AppTemplate.git",
+    "TemplateName": "EcoFind"
   },
   "Modules": [
     {
