@@ -11,7 +11,7 @@
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>claritygen</ToolCommandName>
 		<PackageId>Myrtus.Clarity.Generator</PackageId>
-		<Version>0.2.7</Version>
+		<Version>0.2.8</Version>
 		<Authors>Sercan Ateş</Authors>
 		<Description>A tool to generate projects with specified modules.</Description>
 		<PackageTags>project-generator;code-generation;cli</PackageTags>
