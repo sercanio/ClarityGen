@@ -33,11 +33,11 @@ namespace Myrtus.Clarity.Generator.Common
 
         /// <summary>
         /// Generates the project.
-        /// - If only CMS is selected, clones the backend CMS module into modules/cms.
-        /// - If WebUI is selected, clones the generic Web UI repository.
-        /// - If both are selected, it also clones the CMS UI module into WebUI/src/modules.
-        /// Additionally, if the WebUI module is selected, the generated docker-compose.yml file
-        /// is updated to include a WebUI service and all image names are forced to lowercase.
+        /// - Clones the template repository.
+        /// - Renames projects and modules.
+        /// - Adds modules (CMS, WebUI, etc.).
+        /// - Updates docker-compose.yml (if needed).
+        /// - **Removes existing Git history and initializes a new repository.**
         /// </summary>
         public async Task GenerateProjectAsync(string projectName, string outputDir, List<string> modulesToAdd)
         {
@@ -54,14 +54,13 @@ namespace Myrtus.Clarity.Generator.Common
                 await RenameProjectAsync(projectName);
                 await UpdateSubmodulesAsync();
 
-                // Remove default CMS folder from template if present.
+                // Remove default CMS folder if present.
                 string defaultCmsFolder = Path.Combine(_tempDir, "modules", "cms");
                 if (Directory.Exists(defaultCmsFolder))
                 {
                     Directory.Delete(defaultCmsFolder, true);
                     AnsiConsole.MarkupLine("[yellow]Note:[/] Default CMS folder removed from template repository.");
                 }
-                // (Optionally update .gitmodules if necessary.)
 
                 // Process backend CMS module.
                 if (cmsSelected)
@@ -105,7 +104,6 @@ namespace Myrtus.Clarity.Generator.Common
                 // If the WebUI module is included, update the docker-compose file accordingly.
                 if (_includeWebUI)
                 {
-                    // Lowercase the project name for Docker naming conventions.
                     await UpdateDockerComposeForWebUIAsync(projectName.ToLowerInvariant());
                 }
 
@@ -143,11 +141,10 @@ namespace Myrtus.Clarity.Generator.Common
             _status.Status = "[bold yellow]Renaming project files and contents...[/]";
             string oldName = _config.Template.TemplateName;
 
-            // Rename directories first.
+            // Rename directories.
             var allDirectories = Directory.GetDirectories(_tempDir, "*", SearchOption.AllDirectories)
                 .OrderBy(d => d.Length)
                 .ToList();
-
             foreach (var dir in allDirectories)
             {
                 if (ShouldSkipPath(dir))
@@ -159,7 +156,7 @@ namespace Myrtus.Clarity.Generator.Common
                 }
             }
 
-            // Then rename file contents and files.
+            // Rename file contents.
             var allFiles = Directory.GetFiles(_tempDir, "*.*", SearchOption.AllDirectories);
             foreach (var file in allFiles)
             {
@@ -362,9 +359,7 @@ namespace Myrtus.Clarity.Generator.Common
             {
                 if (ShouldSkipPath(file))
                     continue;
-
                 await RenameFileContentsAsync(file, oldName, newName);
-
                 string newFilePath = file.Replace(oldName, newName);
                 if (file != newFilePath && !File.Exists(newFilePath))
                 {
@@ -381,7 +376,6 @@ namespace Myrtus.Clarity.Generator.Common
             {
                 if (ShouldSkipPath(dir))
                     continue;
-
                 string newDir = dir.Replace(oldName, newName);
                 if (dir != newDir && !Directory.Exists(newDir))
                 {
@@ -392,8 +386,6 @@ namespace Myrtus.Clarity.Generator.Common
 
         /// <summary>
         /// Updates the docker-compose.yml file to add a WebUI service block if not already present.
-        /// The new service block is inserted immediately before the top-level "volumes:" key.
-        /// Additionally, this method runs a regex to force all "image:" lines to use lowercase names.
         /// </summary>
         private async Task UpdateDockerComposeForWebUIAsync(string newName)
         {
@@ -401,39 +393,28 @@ namespace Myrtus.Clarity.Generator.Common
             string composeFile = Path.Combine(_tempDir, "docker-compose.yml");
             if (!File.Exists(composeFile))
             {
-                // If the file does not exist, nothing to update.
                 return;
             }
 
             string content = await File.ReadAllTextAsync(composeFile);
 
-            // Check whether the webui service is already defined.
             if (!content.Contains($"{newName}-webui", StringComparison.OrdinalIgnoreCase))
             {
-                // Define the webui service block.
                 var webUIBlock = $@"
-  {newName.ToLowerInvariant()}-webui:
-    image: {newName.ToLowerInvariant()}-webui
+  {newName}-webui:
+    image: {newName}-webui
     build:
       context: ./WebUI
       dockerfile: Dockerfile
     container_name: {newName}.WebUI
     ports:
       - ""3000:80""
-    labels:
-      - ""traefik.enable=true""
-      - 'traefik.http.routers.webui.rule=Host(`localhost`) && PathPrefix(`/`)'
-      - ""traefik.http.routers.webui.entrypoints=web""
-      - ""traefik.http.services.webui.loadbalancer.server.port=80""
       
 ";
 
-                // Use a regex in multiline mode to find the top-level "volumes:" key (at the beginning of a line)
-                // and insert our webUIBlock just above it.
                 var pattern = @"(?m)^(volumes:)";
                 content = Regex.Replace(content, pattern, webUIBlock + "$1");
 
-                // Now force all "image:" lines to be lower case.
                 content = Regex.Replace(content, @"^( *image:\s*)([^\s]+)", m =>
                 {
                     return m.Groups[1].Value + m.Groups[2].Value.ToLowerInvariant();
@@ -445,7 +426,103 @@ namespace Myrtus.Clarity.Generator.Common
         }
 
         /// <summary>
-        /// Determines whether to skip a file or directory path based on common exclusions.
+        /// Removes any .git directories and files from the specified directory.
+        /// Ensures that files are not read-only before deletion.
+        /// </summary>
+        private void RemoveGitFolders(string directory)
+        {
+            // Remove .git at the root (can be a file or directory)
+            var rootGitPath = Path.Combine(directory, ".git");
+            if (Directory.Exists(rootGitPath))
+            {
+                RemoveReadOnlyAttributesRecursively(rootGitPath);
+                Directory.Delete(rootGitPath, true);
+            }
+            else if (File.Exists(rootGitPath))
+            {
+                File.SetAttributes(rootGitPath, FileAttributes.Normal);
+                File.Delete(rootGitPath);
+            }
+
+            // Remove any .git directories in subdirectories.
+            foreach (var gitDir in Directory.GetDirectories(directory, ".git", SearchOption.AllDirectories))
+            {
+                RemoveReadOnlyAttributesRecursively(gitDir);
+                Directory.Delete(gitDir, true);
+            }
+
+            // Remove any .git files in subdirectories.
+            foreach (var gitFile in Directory.GetFiles(directory, ".git", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(gitFile, FileAttributes.Normal);
+                File.Delete(gitFile);
+            }
+        }
+
+        /// <summary>
+        /// Recursively sets the attributes of all files in the directory to Normal.
+        /// </summary>
+        private void RemoveReadOnlyAttributesRecursively(string directory)
+        {
+            foreach (var file in Directory.GetFiles(directory, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+            }
+        }
+
+        /// <summary>
+        /// Finalizes the project by moving the temporary directory to the final output location,
+        /// removing Git history, and initializing a new Git repository.
+        /// </summary>
+        private void FinalizeProjectAsync(string projectName, string outputDir)
+        {
+            _status.Status = "[bold green]Finalizing project...[/]";
+            var finalPath = Path.Combine(outputDir, projectName);
+            if (Directory.Exists(finalPath))
+            {
+                Directory.Delete(finalPath, true);
+            }
+
+            // Remove existing Git history.
+            RemoveGitFolders(_tempDir);
+            var gitModulesPath = Path.Combine(_tempDir, ".gitmodules");
+            if (File.Exists(gitModulesPath))
+            {
+                File.Delete(gitModulesPath);
+            }
+
+            // Move the cleaned project to its final location.
+            Directory.Move(_tempDir, finalPath);
+
+            // Initialize a new Git repository.
+            var initResult = RunProcessAsync("git", "init", finalPath).Result;
+            if (!initResult.Success)
+            {
+                AnsiConsole.MarkupLine($"[red]Error initializing git repo: {initResult.Error}[/]");
+            }
+            var addResult = RunProcessAsync("git", "add .", finalPath).Result;
+            if (!addResult.Success)
+            {
+                AnsiConsole.MarkupLine($"[red]Error adding files to git: {addResult.Error}[/]");
+            }
+            var commitResult = RunProcessAsync("git", "commit -m \"Initial commit\"", finalPath).Result;
+            if (!commitResult.Success)
+            {
+                AnsiConsole.MarkupLine($"[red]Error committing to git: {commitResult.Error}[/]");
+            }
+
+            var tree = new Tree($"[green]Project Generated:[/] {projectName}")
+                .Style(Style.Parse("cyan"));
+            tree.AddNode($"[blue]Location:[/] [link={finalPath}]{finalPath}[/]");
+            tree.AddNode($"[blue]Template:[/] {_config.Template.TemplateName}");
+            AnsiConsole.Write(new Panel(tree)
+                .Header("Success!")
+                .BorderColor(Color.Green));
+            AnsiConsole.MarkupLine("\n[grey]Click the path above to open the project location[/]");
+        }
+
+        /// <summary>
+        /// Determines whether to skip a file or directory based on common exclusions.
         /// </summary>
         private bool ShouldSkipPath(string path)
         {
@@ -459,18 +536,14 @@ namespace Myrtus.Clarity.Generator.Common
 
         /// <summary>
         /// Reads a file, replaces occurrences of oldName with newName (excluding ".Core" when needed),
-        /// updates using statements and project references, and then writes back the content.
-        /// Also renames the file if its name contains the oldName.
+        /// and renames the file if its name contains the oldName.
         /// </summary>
         private async Task RenameFileContentsAsync(string file, string oldName, string newName)
         {
             var content = await File.ReadAllTextAsync(file);
             content = ReplaceContentExcludingCore(content, oldName, newName);
-
-            // Additional replacement: replace the centralized token using the oldName from configuration.
             content = content.Replace(oldName, newName);
 
-            // Update using statements for .cs, .cshtml and .cshtml.cs files (supports both "using" and Razor "@using")
             if (file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
                 || file.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase)
                 || file.EndsWith(".cshtml.cs", StringComparison.OrdinalIgnoreCase))
@@ -481,13 +554,10 @@ namespace Myrtus.Clarity.Generator.Common
             {
                 content = UpdateProjectReferences(content, oldName, newName);
             }
-
-            // Additional processing for docker-compose.yml and appsettings.json files.
             if (Path.GetFileName(file).Equals("docker-compose.yml", StringComparison.OrdinalIgnoreCase))
             {
                 content = Regex.Replace(content, @"AppTemplate", newName, RegexOptions.IgnoreCase);
                 content = Regex.Replace(content, @"src/AppTemplate.Web/Dockerfile", $"src/{newName}.Clarity.Web/Dockerfile", RegexOptions.IgnoreCase);
-                // Also force image names to lowercase in this file.
                 content = Regex.Replace(content, @"^( *image:\s*)([^\s]+)", m =>
                 {
                     return m.Groups[1].Value + m.Groups[2].Value.ToLowerInvariant();
@@ -502,7 +572,6 @@ namespace Myrtus.Clarity.Generator.Common
             }
 
             await File.WriteAllTextAsync(file, content);
-
             string newFilePath = file.Replace(oldName, newName);
             if (file != newFilePath)
             {
@@ -516,18 +585,15 @@ namespace Myrtus.Clarity.Generator.Common
         }
 
         /// <summary>
-        /// Replaces occurrences of oldName with newName in the given content, except when followed by ".Core".
+        /// Replaces occurrences of oldName with newName, except when followed by ".Core".
         /// </summary>
         private string ReplaceContentExcludingCore(string content, string oldName, string newName)
         {
-            // This negative lookahead ensures that after oldName, if there's any series of dot tokens ending in .Core,
-            // the replacement is skipped.
             return Regex.Replace(content, $@"\b{Regex.Escape(oldName)}\b(?!((\.[A-Za-z0-9]+)*\.Core\b))", newName);
         }
 
         /// <summary>
         /// Updates using statements in the content.
-        /// This now matches both "using" and Razor's "@using" directives.
         /// </summary>
         private string UpdateUsingStatements(string content, string oldName, string newName)
         {
@@ -546,29 +612,6 @@ namespace Myrtus.Clarity.Generator.Common
                 $@"(<ProjectReference\s+Include=\""[^\""]*?){Regex.Escape(oldName)}(?!((\.[A-Za-z0-9]+)*\.Core\b))([^\""]*\"")",
                 m => $"{m.Groups[1].Value}{newName}{m.Groups[4].Value}"
             );
-        }
-
-        /// <summary>
-        /// Moves the generated project from the temporary directory to the output directory,
-        /// and prints the final project location.
-        /// </summary>
-        private void FinalizeProjectAsync(string projectName, string outputDir)
-        {
-            _status.Status = "[bold green]Finalizing project...[/]";
-            var finalPath = Path.Combine(outputDir, projectName);
-            if (Directory.Exists(finalPath))
-            {
-                Directory.Delete(finalPath, true);
-            }
-            Directory.Move(_tempDir, finalPath);
-            var tree = new Tree($"[green]Project Generated:[/] {projectName}")
-                .Style(Style.Parse("cyan"));
-            tree.AddNode($"[blue]Location:[/] [link={finalPath}]{finalPath}[/]");
-            tree.AddNode($"[blue]Template:[/] {_config.Template.TemplateName}");
-            AnsiConsole.Write(new Panel(tree)
-                .Header("Success!")
-                .BorderColor(Color.Green));
-            AnsiConsole.MarkupLine("\n[grey]Click the path above to open the project location[/]");
         }
 
         /// <summary>
