@@ -485,8 +485,8 @@ namespace Myrtus.Clarity.Generator.Common
             // Additional processing for docker-compose.yml and appsettings.json files.
             if (Path.GetFileName(file).Equals("docker-compose.yml", StringComparison.OrdinalIgnoreCase))
             {
-                content = Regex.Replace(content, @"Myrtus", newName, RegexOptions.IgnoreCase);
-                content = Regex.Replace(content, @"src/Myrtus\.Clarity\.WebAPI/Dockerfile", $"src/{newName}.Clarity.WebAPI/Dockerfile", RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"AppTemplate", newName, RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"src/AppTemplate.Web/Dockerfile", $"src/{newName}.Clarity.Web/Dockerfile", RegexOptions.IgnoreCase);
                 // Also force image names to lowercase in this file.
                 content = Regex.Replace(content, @"^( *image:\s*)([^\s]+)", m =>
                 {
@@ -495,10 +495,10 @@ namespace Myrtus.Clarity.Generator.Common
             }
             if (Path.GetFileName(file).Equals("appsettings.json", StringComparison.OrdinalIgnoreCase))
             {
-                content = Regex.Replace(content, @"Myrtus-db", newName + "-db", RegexOptions.IgnoreCase);
-                content = Regex.Replace(content, @"Myrtus-redis", newName + "-redis", RegexOptions.IgnoreCase);
-                content = Regex.Replace(content, @"Myrtus-mongodb", newName + "-mongodb", RegexOptions.IgnoreCase);
-                content = Regex.Replace(content, @"Myrtus-seq", newName + "-seq", RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"AppTemplate-db", newName + "-db", RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"AppTemplate-redis", newName + "-redis", RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"AppTemplate-mongodb", newName + "-mongodb", RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"AppTemplate-seq", newName + "-seq", RegexOptions.IgnoreCase);
             }
 
             await File.WriteAllTextAsync(file, content);
