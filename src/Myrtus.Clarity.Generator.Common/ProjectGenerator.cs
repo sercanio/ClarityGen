@@ -467,11 +467,17 @@ namespace Myrtus.Clarity.Generator.Common
             var content = await File.ReadAllTextAsync(file);
             content = ReplaceContentExcludingCore(content, oldName, newName);
 
-            if (file.EndsWith(".cs") || file.EndsWith(".cshtml"))
+            // Additional replacement: replace the centralized token using the oldName from configuration.
+            content = content.Replace(oldName, newName);
+
+            // Update using statements for .cs, .cshtml and .cshtml.cs files (supports both "using" and Razor "@using")
+            if (file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+                || file.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase)
+                || file.EndsWith(".cshtml.cs", StringComparison.OrdinalIgnoreCase))
             {
                 content = UpdateUsingStatements(content, oldName, newName);
             }
-            if (file.EndsWith(".csproj"))
+            if (file.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
             {
                 content = UpdateProjectReferences(content, oldName, newName);
             }
@@ -521,10 +527,13 @@ namespace Myrtus.Clarity.Generator.Common
 
         /// <summary>
         /// Updates using statements in the content.
+        /// This now matches both "using" and Razor's "@using" directives.
         /// </summary>
         private string UpdateUsingStatements(string content, string oldName, string newName)
         {
-            return Regex.Replace(content, $@"using\s+{Regex.Escape(oldName)}\.(?!((\w+\.)*Core\b))", $"using {newName}.");
+            return Regex.Replace(content,
+                $@"(?m)^(?<prefix>@?using\s+){Regex.Escape(oldName)}\.(?!((\w+\.)*Core\b))",
+                m => $"{m.Groups["prefix"].Value}{newName}.");
         }
 
         /// <summary>
@@ -538,7 +547,6 @@ namespace Myrtus.Clarity.Generator.Common
                 m => $"{m.Groups[1].Value}{newName}{m.Groups[4].Value}"
             );
         }
-
 
         /// <summary>
         /// Moves the generated project from the temporary directory to the output directory,
