@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.11] - 2025-05-07
+
+### Removed
+- **CMS Module Removal:**
+  - Removed the CMS module from the default configuration.
+- **MongoDB Database Support:**
+  - Removed MongoDB database support from the default configuration.
+  
 ## [v0.2.7] - 2025-02-09
 
 ### Added

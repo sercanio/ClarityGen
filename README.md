@@ -10,7 +10,7 @@
 ````
 **Clarity Generator** is a powerful tool designed to streamline the creation of project templates. By automating the process of cloning repositories, renaming files and contents, updating submodules, and finalizing setups, it helps developers save time and effort.
 
-![Version](https://img.shields.io/badge/version-0.2.10-blue)
+![Version](https://img.shields.io/badge/version-0.2.11-blue)
 ![DotNet](https://img.shields.io/badge/dotnet-v9.0-purple)
 ![MIT License](https://img.shields.io/badge/license-MIT-green)
 ![Build Status](https://img.shields.io/github/actions/workflow/status/sercanio/Myrtus.Clarity.Generator/release.yml?branch=main)
