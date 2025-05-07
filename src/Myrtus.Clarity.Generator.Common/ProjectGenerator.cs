@@ -35,14 +35,13 @@ namespace Myrtus.Clarity.Generator.Common
         /// Generates the project.
         /// - Clones the template repository.
         /// - Renames projects and modules.
-        /// - Adds modules (CMS, WebUI, etc.).
+        /// - Adds modules (WebUI, etc.).
         /// - Updates docker-compose.yml (if needed).
         /// - **Removes existing Git history and initializes a new repository.**
         /// </summary>
         public async Task GenerateProjectAsync(string projectName, string outputDir, List<string> modulesToAdd)
         {
             // Determine module selections.
-            bool cmsSelected = modulesToAdd.Any(m => m.Equals("cms", StringComparison.OrdinalIgnoreCase));
             bool webUISelected = modulesToAdd.Any(m =>
                                     m.Equals("webui", StringComparison.OrdinalIgnoreCase) ||
                                     m.Equals("ui", StringComparison.OrdinalIgnoreCase));
@@ -62,25 +61,12 @@ namespace Myrtus.Clarity.Generator.Common
                     AnsiConsole.MarkupLine("[yellow]Note:[/] Default CMS folder removed from template repository.");
                 }
 
-                // Process backend CMS module.
-                if (cmsSelected)
-                {
-                    modulesToAdd.RemoveAll(m => m.Equals("cms", StringComparison.OrdinalIgnoreCase));
-                    await AddCmsModuleAsync(projectName);
-                }
-
                 // Process Web UI module.
                 if (webUISelected)
                 {
                     modulesToAdd.RemoveAll(m => m.Equals("webui", StringComparison.OrdinalIgnoreCase)
                                                || m.Equals("ui", StringComparison.OrdinalIgnoreCase));
                     await AddWebUIAsync(projectName);
-
-                    // When both CMS and WebUI are selected, also add the CMS UI module.
-                    if (cmsSelected)
-                    {
-                        await AddCmsUIModuleAsync(projectName);
-                    }
                 }
 
                 // Process any remaining modules.
@@ -223,41 +209,6 @@ namespace Myrtus.Clarity.Generator.Common
         }
 
         /// <summary>
-        /// Clones the backend CMS module repository into the modules/cms folder.
-        /// </summary>
-        private async Task AddCmsModuleAsync(string newName)
-        {
-            _status.Status = "[bold yellow]Cloning backend CMS module repository...[/]";
-            string repoUrl = "https://github.com/sercanio/Myrtus.Clarity.Module.CMS.git";
-            string cmsModuleDir = Path.Combine(_tempDir, "modules", "cms");
-            var result = await RunProcessAsync("git", $"clone {repoUrl} \"{cmsModuleDir}\"");
-            if (!result.Success)
-            {
-                throw new Exception($"Git clone for backend CMS module failed: {result.Error}");
-            }
-            await RenameModuleAsync(newName, cmsModuleDir);
-            AnsiConsole.MarkupLine("[green]Backend CMS module added and renamed successfully.[/]");
-        }
-
-        /// <summary>
-        /// Clones the CMS UI module repository into the WebUI/src/modules/cms folder.
-        /// </summary>
-        private async Task AddCmsUIModuleAsync(string newName)
-        {
-            _status.Status = "[bold yellow]Cloning CMS UI module repository...[/]";
-            string repoUrl = "https://github.com/sercanio/Myrtus.Clarity.WebUI.Module.CMS.git";
-            string cmsUIModuleDir = Path.Combine(_tempDir, "WebUI", "src", "modules", "cms");
-            Directory.CreateDirectory(Path.Combine(_tempDir, "WebUI", "src", "modules")); // Ensure parent folder exists.
-            var result = await RunProcessAsync("git", $"clone {repoUrl} \"{cmsUIModuleDir}\"");
-            if (!result.Success)
-            {
-                throw new Exception($"Git clone for CMS UI module failed: {result.Error}");
-            }
-            await RenameWebUIAsync(newName, cmsUIModuleDir);
-            AnsiConsole.MarkupLine("[green]CMS UI module added and renamed successfully.[/]");
-        }
-
-        /// <summary>
         /// Clones the generic Web UI repository into the WebUI folder.
         /// </summary>
         private async Task AddWebUIAsync(string newName)
@@ -310,41 +261,6 @@ namespace Myrtus.Clarity.Generator.Common
             if (Directory.Exists(nestedSubmodulePath))
             {
                 Directory.Delete(nestedSubmodulePath, true);
-            }
-        }
-
-        /// <summary>
-        /// Renames a backend module by recursively replacing occurrences of the old name with the new name.
-        /// </summary>
-        private async Task RenameModuleAsync(string newName, string moduleDir)
-        {
-            string oldName = _config.Template.TemplateName;
-            var allFiles = Directory.GetFiles(moduleDir, "*.*", SearchOption.AllDirectories);
-            foreach (var file in allFiles)
-            {
-                if (ShouldSkipPath(file))
-                    continue;
-                await RenameFileContentsAsync(file, oldName, newName);
-                string newFilePath = file.Replace(oldName, newName);
-                if (file != newFilePath && !File.Exists(newFilePath))
-                {
-                    string newFileDirectory = Path.GetDirectoryName(newFilePath)!;
-                    Directory.CreateDirectory(newFileDirectory);
-                    File.Move(file, newFilePath);
-                }
-            }
-            var allDirs = Directory.GetDirectories(moduleDir, "*", SearchOption.AllDirectories)
-                                   .OrderByDescending(d => d.Length)
-                                   .ToList();
-            foreach (var dir in allDirs)
-            {
-                if (ShouldSkipPath(dir))
-                    continue;
-                string newDir = dir.Replace(oldName, newName);
-                if (dir != newDir && !Directory.Exists(newDir))
-                {
-                    Directory.Move(dir, newDir);
-                }
             }
         }
 

@@ -17,6 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 	ProjectSection(SolutionItems) = preProject
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
+		CHANGELOG.md = CHANGELOG.md
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md
 	EndProjectSection
@@ -79,5 +80,8 @@ Global
 		{579DA3F3-616F-4115-9630-2A9B011E6157} = {C4C6D36D-215B-426A-AD79-2D9F70DB7C32}
 		{FA7D05B8-79EB-418C-859E-C3EFC5E50C37} = {579DA3F3-616F-4115-9630-2A9B011E6157}
 		{4A460C7F-152A-4C68-B656-5C4119E23006} = {C4C6D36D-215B-426A-AD79-2D9F70DB7C32}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {35AEE279-28CD-4C56-975E-A99387705902}
 	EndGlobalSection
 EndGlobal
