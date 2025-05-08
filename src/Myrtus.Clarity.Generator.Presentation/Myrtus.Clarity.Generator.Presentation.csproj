@@ -6,14 +6,12 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AssemblyName>ClarityGen</AssemblyName>
-
-		<!-- Tooling Properties -->
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>claritygen</ToolCommandName>
-		<PackageId>Myrtus.Clarity.Generator</PackageId>
-		<Version>0.2.11</Version>
+		<PackageId>ClarityGen</PackageId>
+		<Version>1.0.0</Version>
 		<Authors>Sercan Ateş</Authors>
-		<Description>A tool to generate projects with specified modules.</Description>
+		<Description> Myrtus ClarityGen is a tool to generate fullstack web project boilerplate.</Description>
 		<PackageTags>project-generator;code-generation;cli</PackageTags>
 		<RepositoryUrl>https://github.com/sercanio/Myrtus.Clarity.Generator</RepositoryUrl>
 		<LicenseUrl>https://opensource.org/licenses/MIT</LicenseUrl>
