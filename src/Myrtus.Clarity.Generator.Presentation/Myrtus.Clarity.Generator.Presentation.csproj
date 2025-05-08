@@ -15,6 +15,7 @@
 		<PackageTags>project-generator;code-generation;cli</PackageTags>
 		<RepositoryUrl>https://github.com/sercanio/Myrtus.Clarity.Generator</RepositoryUrl>
 		<LicenseUrl>https://opensource.org/licenses/MIT</LicenseUrl>
+		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 	</PropertyGroup>
 
 	<!-- Debug Configuration -->
