@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.1] - 2025-05-08]
+
+### Changed
+- **Version Bump:**
+  - Updated the version to `1.0.1` to signify a minor update with bug fixes and improvements.
+- **Readme Update:**
+  - Updated the README file to reflect the latest changes and improvements in the project.
+- **LICENCE File:**
+  - Added a LICENSE file to clarify the project's licensing terms and conditions.
+
 ## [v1.0.0] - 2025-05-08
 
 ### Changed
