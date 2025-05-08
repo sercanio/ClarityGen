@@ -45,10 +45,6 @@ The generator’s settings are stored in the `appsettings.json` file. Below is a
   },
   "Modules": [
     {
-      "Name": "cms",
-      "GitRepoUrl": "https://github.com/sercanio/Myrtus.Clarity.Module.CMS.git"
-    },
-    {
       "Name": "webui",
       "GitRepoUrl": "https://github.com/sercanio/Myrtus.Clarity.WebUI.git"
     }
