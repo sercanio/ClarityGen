@@ -5,8 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v1.0.0] - 2025-05-08
 
+### Changed
+- **Version Bump:**
+  - Updated the version to `1.0.0` to signify a stable release after extensive testing and feedback.
+- **Nuget Package Name Change:**
+  - Changed the NuGet package name from `Myrtus.Clarity.Generator` to `ClarityGen` for better branding and recognition.
+
+### Removed
+- **MongoDB References:**
+  - Removed `MongoDB.Bson` and `MongoDB.Driver` packages from `AppTemplate.Domain.csproj`, `AppTemplate.Infrastructure.csproj`, and `AppTemplate.Web.csproj`.
+  - Eliminated MongoDB-related `using` directives in `Program.cs`.
+
+### Changed
+- **Project File Reorganization:**
+  - Adjusted `AppTemplate.Application.csproj` to list project references before package references for improved clarity and maintainability.
 ## [v0.2.11] - 2025-05-07
 
 ### Removed
