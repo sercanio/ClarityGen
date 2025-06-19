@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.2] - 2025-05-10
+
+### Changed
+- **Version Bump:**
+  - Updated the version to `1.0.2` for minor improvements and configuration updates.
+- **WebUI Module Configuration:**
+  - Updated the WebUI module Git repository URL in appsettings.json for improved module integration.
+
 ## [v1.0.1] - 2025-05-08]
 
 ### Changed
@@ -31,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Project File Reorganization:**
   - Adjusted `AppTemplate.Application.csproj` to list project references before package references for improved clarity and maintainability.
+
 ## [v0.2.11] - 2025-05-07
 
 ### Removed
@@ -38,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed the CMS module from the default configuration.
 - **MongoDB Database Support:**
   - Removed MongoDB database support from the default configuration.
-  
+
 ## [v0.2.7] - 2025-02-09
 
 ### Added
@@ -75,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Code Generator Enhancements:**
   - Improved the code generator to handle frontend creation, including routing setup, component scaffolding, and initial state management.
   - Refined the backend code generator to ensure consistency in naming conventions and project structure.
-  
+
 - **Project Initialization Flow:**
   - Simplified project initialization by adding a prompt for module selection during setup, ensuring the correct modules are added based on user input.
   - Enhanced user prompts for selecting additional features or configurations during project setup.
