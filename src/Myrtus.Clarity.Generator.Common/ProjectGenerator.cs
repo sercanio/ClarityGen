@@ -215,7 +215,7 @@ namespace Myrtus.Clarity.Generator.Common
         {
             _status.Status = "[bold yellow]Cloning Web UI repository...[/]";
             string webUIDir = Path.Combine(_tempDir, "WebUI");
-            var result = await RunProcessAsync("git", $"clone https://github.com/sercanio/Myrtus.Clarity.WebUI \"{webUIDir}\"");
+            var result = await RunProcessAsync("git", $"clone https://github.com/sercanio/AppTemplate-WebUI \"{webUIDir}\"");
             if (!result.Success)
             {
                 throw new Exception($"Git clone for Web UI failed: {result.Error}");
