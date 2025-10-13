@@ -101,7 +101,15 @@ namespace Myrtus.Clarity.Generator.Common
             {
                 if (Directory.Exists(_tempDir))
                 {
-                    Directory.Delete(_tempDir, true);
+                    try
+                    {
+                        RemoveReadOnlyAttributesRecursively(_tempDir); // Ensure all files are writable
+                        Directory.Delete(_tempDir, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[red]Warning:[/] Could not fully clean up temp directory: {Markup.Escape(ex.Message)}");
+                    }
                 }
             }
         }
@@ -112,11 +120,18 @@ namespace Myrtus.Clarity.Generator.Common
         private async Task CloneTemplateRepositoryAsync()
         {
             _status.Status = "[bold yellow]Cloning template repository...[/]";
+
+            // Set global long path support before cloning
+            await RunProcessAsync("git", "config --global core.longpaths true");
+
             var result = await RunProcessAsync("git", $"clone {_config.Template.GitRepoUrl} \"{_tempDir}\"");
             if (!result.Success)
             {
                 throw new Exception($"Git clone failed: {result.Error}");
             }
+
+            // After clone, set local long path support in the cloned repo
+            await RunProcessAsync("git", "config --local core.longpaths true", _tempDir);
         }
 
         /// <summary>
@@ -384,6 +399,11 @@ namespace Myrtus.Clarity.Generator.Common
             {
                 File.SetAttributes(file, FileAttributes.Normal);
             }
+            foreach (var dir in Directory.GetDirectories(directory, "*", SearchOption.AllDirectories))
+            {
+                var dirInfo = new DirectoryInfo(dir);
+                dirInfo.Attributes = FileAttributes.Normal;
+            }
         }
 
         /// <summary>
@@ -443,7 +463,6 @@ namespace Myrtus.Clarity.Generator.Common
         private bool ShouldSkipPath(string path)
         {
             return path.Contains(".git") ||
-                   path.Contains("tests") ||
                    path.Contains("bin") ||
                    path.Contains("obj") ||
                    path.EndsWith(".Core") ||
