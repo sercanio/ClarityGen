@@ -492,7 +492,7 @@ namespace Myrtus.Clarity.Generator.Common
             if (Path.GetFileName(file).Equals("docker-compose.yml", StringComparison.OrdinalIgnoreCase))
             {
                 content = Regex.Replace(content, @"AppTemplate", newName, RegexOptions.IgnoreCase);
-                content = Regex.Replace(content, @"src/AppTemplate.Web/Dockerfile", $"src/{newName}.Clarity.Web/Dockerfile", RegexOptions.IgnoreCase);
+                content = Regex.Replace(content, @"src/AppTemplate.Presentation/Dockerfile", $"src/{newName}.Clarity.Presentation/Dockerfile", RegexOptions.IgnoreCase);
                 content = Regex.Replace(content, @"^( *image:\s*)([^\s]+)", m =>
                 {
                     return m.Groups[1].Value + m.Groups[2].Value.ToLowerInvariant();

@@ -8,7 +8,7 @@
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>claritygen</ToolCommandName>
 		<PackageId>ClarityGen</PackageId>
-		<Version>1.0.4</Version>
+		<Version>1.0.5</Version>
 		<Authors>Sercan Ateş</Authors>
 		<Description>Myrtus ClarityGen is a tool to generate fullstack web project boilerplate.</Description>
 		<PackageTags>project-generator;code-generation;cli</PackageTags>
