@@ -53,13 +53,6 @@ namespace Myrtus.Clarity.Generator.Common
                 await RenameProjectAsync(projectName);
                 await UpdateSubmodulesAsync();
 
-                // Remove default CMS folder if present.
-                string defaultCmsFolder = Path.Combine(_tempDir, "modules", "cms");
-                if (Directory.Exists(defaultCmsFolder))
-                {
-                    Directory.Delete(defaultCmsFolder, true);
-                    AnsiConsole.MarkupLine("[yellow]Note:[/] Default CMS folder removed from template repository.");
-                }
 
                 // Process Web UI module.
                 if (webUISelected)
@@ -87,15 +80,10 @@ namespace Myrtus.Clarity.Generator.Common
                     }
                 }
 
-                // If the WebUI module is included, update the docker-compose file accordingly.
-                if (_includeWebUI)
-                {
-                    await UpdateDockerComposeForWebUIAsync(projectName.ToLowerInvariant());
-                }
-
-                // Rename modules and finalize the project.
-                await RenameModulesAsync(projectName);
-                FinalizeProjectAsync(projectName, outputDir);
+                await UpdateAllDockerComposeFilesAsync(projectName.ToLowerInvariant());
+// Rename modules and finalize the project.
+await RenameModulesAsync(projectName);
+await FinalizeProjectAsync(projectName, outputDir);
             }
             finally
             {
@@ -315,21 +303,41 @@ namespace Myrtus.Clarity.Generator.Common
             }
         }
 
+        private async Task UpdateAllDockerComposeFilesAsync(string newName)
+        {
+            _status.Status = "[bold yellow]Updating all docker-compose files...[/]";
+
+            // Find all docker-compose*.yml files in the temp directory
+            var dockerComposeFiles = Directory.GetFiles(_tempDir, "docker-compose*.yml", SearchOption.TopDirectoryOnly);
+
+            if (dockerComposeFiles.Length == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]No docker-compose files found to update.[/]");
+                return;
+            }
+
+            foreach (var composeFile in dockerComposeFiles)
+            {
+                await UpdateDockerComposeFileAsync(composeFile, newName);
+                AnsiConsole.MarkupLine($"[green]Updated:[/] {Path.GetFileName(composeFile)}");
+            }
+        }
+
         /// <summary>
         /// Updates the docker-compose.yml file to add a WebUI service block if not already present.
         /// </summary>
-        private async Task UpdateDockerComposeForWebUIAsync(string newName)
+        private async Task UpdateDockerComposeFileAsync(string composeFile, string newName)
         {
-            // Assume the docker-compose.yml file is at the root of _tempDir.
-            string composeFile = Path.Combine(_tempDir, "docker-compose.yml");
             if (!File.Exists(composeFile))
             {
                 return;
             }
 
             string content = await File.ReadAllTextAsync(composeFile);
+            bool hasChanges = false;
 
-            if (!content.Contains($"{newName}-webui", StringComparison.OrdinalIgnoreCase))
+            // Add WebUI service block if needed and not already present
+            if (_includeWebUI && !content.Contains($"{newName}-webui", StringComparison.OrdinalIgnoreCase))
             {
                 var webUIBlock = $@"
   {newName}-webui:
@@ -342,17 +350,31 @@ namespace Myrtus.Clarity.Generator.Common
       - ""3000:80""
       
 ";
-
                 var pattern = @"(?m)^(volumes:)";
                 content = Regex.Replace(content, pattern, webUIBlock + "$1");
+                hasChanges = true;
+            }
 
-                content = Regex.Replace(content, @"^( *image:\s*)([^\s]+)", m =>
-                {
-                    return m.Groups[1].Value + m.Groups[2].Value.ToLowerInvariant();
-                }, RegexOptions.Multiline);
+            // Replace AppTemplate references
+            if (content.Contains("AppTemplate", StringComparison.OrdinalIgnoreCase))
+            {
+                content = Regex.Replace(content, @"AppTemplate", newName, RegexOptions.IgnoreCase);
+                hasChanges = true;
+            }
 
+            // Update Dockerfile paths
+            content = Regex.Replace(content, @"src/AppTemplate.Presentation/Dockerfile",
+                $"src/{newName}.Clarity.Presentation/Dockerfile", RegexOptions.IgnoreCase);
+
+            // Force image names to lowercase
+            content = Regex.Replace(content, @"^( *image:\s*)([^\s]+)", m =>
+            {
+                return m.Groups[1].Value + m.Groups[2].Value.ToLowerInvariant();
+            }, RegexOptions.Multiline);
+
+            if (hasChanges || content != await File.ReadAllTextAsync(composeFile))
+            {
                 await File.WriteAllTextAsync(composeFile, content);
-                AnsiConsole.MarkupLine("[green]Web UI container added to docker-compose.yml and image names forced to lowercase.[/]");
             }
         }
 
@@ -407,10 +429,10 @@ namespace Myrtus.Clarity.Generator.Common
         }
 
         /// <summary>
-        /// Finalizes the project by moving the temporary directory to the final output location,
+        /// Finalizes the project by copying the temporary directory to the final output location,
         /// removing Git history, and initializing a new Git repository.
         /// </summary>
-        private void FinalizeProjectAsync(string projectName, string outputDir)
+        private async Task FinalizeProjectAsync(string projectName, string outputDir)
         {
             _status.Status = "[bold green]Finalizing project...[/]";
             var finalPath = Path.Combine(outputDir, projectName);
@@ -427,21 +449,21 @@ namespace Myrtus.Clarity.Generator.Common
                 File.Delete(gitModulesPath);
             }
 
-            // Move the cleaned project to its final location.
-            Directory.Move(_tempDir, finalPath);
+            // Copy the cleaned project to its final location instead of moving
+            await CopyDirectoryAsync(_tempDir, finalPath);
 
             // Initialize a new Git repository.
-            var initResult = RunProcessAsync("git", "init", finalPath).Result;
+            var initResult = await RunProcessAsync("git", "init", finalPath);
             if (!initResult.Success)
             {
                 AnsiConsole.MarkupLine($"[red]Error initializing git repo: {initResult.Error}[/]");
             }
-            var addResult = RunProcessAsync("git", "add .", finalPath).Result;
+            var addResult = await RunProcessAsync("git", "add .", finalPath);
             if (!addResult.Success)
             {
                 AnsiConsole.MarkupLine($"[red]Error adding files to git: {addResult.Error}[/]");
             }
-            var commitResult = RunProcessAsync("git", "commit -m \"Initial commit\"", finalPath).Result;
+            var commitResult = await RunProcessAsync("git", "commit -m \"Initial commit\"", finalPath);
             if (!commitResult.Success)
             {
                 AnsiConsole.MarkupLine($"[red]Error committing to git: {commitResult.Error}[/]");
@@ -455,6 +477,31 @@ namespace Myrtus.Clarity.Generator.Common
                 .Header("Success!")
                 .BorderColor(Color.Green));
             AnsiConsole.MarkupLine("\n[grey]Click the path above to open the project location[/]");
+        }
+
+        /// <summary>
+        /// Recursively copies a directory and all its contents to a new location.
+        /// This works across different filesystems, unlike Directory.Move().
+        /// </summary>
+        private async Task CopyDirectoryAsync(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+
+            // Copy all files
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string fileName = Path.GetFileName(file);
+                string destFile = Path.Combine(destDir, fileName);
+                File.Copy(file, destFile, true);
+            }
+
+            // Copy all subdirectories
+            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            {
+                string dirName = Path.GetFileName(subDir);
+                string destSubDir = Path.Combine(destDir, dirName);
+                await CopyDirectoryAsync(subDir, destSubDir);
+            }
         }
 
         /// <summary>
@@ -489,15 +536,11 @@ namespace Myrtus.Clarity.Generator.Common
             {
                 content = UpdateProjectReferences(content, oldName, newName);
             }
-            if (Path.GetFileName(file).Equals("docker-compose.yml", StringComparison.OrdinalIgnoreCase))
-            {
-                content = Regex.Replace(content, @"AppTemplate", newName, RegexOptions.IgnoreCase);
-                content = Regex.Replace(content, @"src/AppTemplate.Presentation/Dockerfile", $"src/{newName}.Clarity.Presentation/Dockerfile", RegexOptions.IgnoreCase);
-                content = Regex.Replace(content, @"^( *image:\s*)([^\s]+)", m =>
-                {
-                    return m.Groups[1].Value + m.Groups[2].Value.ToLowerInvariant();
-                }, RegexOptions.Multiline);
-            }
+            // Remove this docker-compose.yml specific block - it's now handled by UpdateAllDockerComposeFilesAsync
+            // if (Path.GetFileName(file).Equals("docker-compose.yml", StringComparison.OrdinalIgnoreCase))
+            // {
+            //     ...
+            // }
             if (Path.GetFileName(file).Equals("appsettings.json", StringComparison.OrdinalIgnoreCase))
             {
                 content = Regex.Replace(content, @"AppTemplate-db", newName + "-db", RegexOptions.IgnoreCase);

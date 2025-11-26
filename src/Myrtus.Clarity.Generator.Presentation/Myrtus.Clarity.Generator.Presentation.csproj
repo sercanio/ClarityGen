@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AssemblyName>ClarityGen</AssemblyName>
@@ -34,7 +34,7 @@
 		<OutputPath>bin\Custom\</OutputPath>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Spectre.Console" Version="0.49.1" />
+		<PackageReference Include="Spectre.Console" Version="0.54.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Myrtus.Clarity.Generator.Business\Myrtus.Clarity.Generator.Business.csproj" />
